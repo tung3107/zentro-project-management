@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary: #cb0404;
+  --primary-light: #d23232;
+  --text: #153060;
+  --secondary: #f37121;
+  --var-input-border: #9badca;
+  --radius:  
+;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Tiêu đề */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: bold;
+  color: #222;
+}
+
+/* Input và button mặc định */
+input,
+button {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
