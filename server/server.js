@@ -1,4 +1,4 @@
-const dotnet = require("dotenv").config({ path: "./config/config.env" });
+const dotnet = require("dotenv").config({ path: "./config.env" });
 const app = require("./app");
 
 const { connectDB } = require("./models/index");
