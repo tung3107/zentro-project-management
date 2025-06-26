@@ -9,11 +9,14 @@ export const usePermission = () => {
     if (!accessToken) return
     ;(async () => {
       try {
+        setPermLoading(true)
         const { data } = await api.get('/permission/me')
         setPermission(data?.data?.data)
       } catch {
         setPermission([])
+      } finally {
+        setPermLoading(false)
       }
     })()
-  }, [accessToken])
+  }, [accessToken, setPermLoading, setPermission])
 }

@@ -8,6 +8,7 @@ import ProtectedRoute from './util/ProtectedRoute'
 import Can from './util/Can'
 import ResetPassword from './feature/auth/pages/ResetPassword'
 import ResetSuccess from './feature/auth/pages/ResetSuccess'
+import MainLayout from './components/MainLayout'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,6 +34,18 @@ function App() {
             <Route path='verify-otp' element={<VerifyOTP />} />
             <Route path='reset-password' element={<ResetPassword />} />
             <Route path='reset-success' element={<ResetSuccess />} />
+
+            <Route element={<ProtectedRoute />}>
+              {/* Tất cả route con bên trong sẽ được bảo vệ */}
+              <Route
+                path='dashboard'
+                element={
+                  <Can resource='dashboard' action='read'>
+                    <MainLayout />
+                  </Can>
+                }
+              />
+            </Route>
 
             <Route path='*' element={<NotFoundPage />} />
           </Routes>

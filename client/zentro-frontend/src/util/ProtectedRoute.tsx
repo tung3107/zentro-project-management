@@ -1,9 +1,9 @@
-import React, { type JSX } from 'react'
+import React, { type JSX, type ReactNode } from 'react'
 import { useAuthStore } from '../feature/auth/stores/authStore'
 import Loading from '../components/Loading'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Outlet } from 'react-router-dom'
 
-export default function ProtectedRoute({ children }: { children: JSX.Element }) {
+export default function ProtectedRoute() {
   const { accessToken, isPermLoading, isAuthenticated } = useAuthStore()
 
   const hasHydrated = useAuthStore.persist.hasHydrated()
@@ -17,7 +17,7 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
 
   // 2️⃣ Đã xác thực & có token → cho vào
   if (isAuthenticated && accessToken) {
-    return children
+    return <Outlet />
   }
 
   // 3️⃣ Mọi trường hợp còn lại → đá về login
