@@ -71,20 +71,16 @@ export default function LoginForm() {
         name='email'
         label='Email'
         onChange={handleChange}
-        onInput={validate}
         value={formData.email}
         placeholder='Nhập email của bạn'
-        required
         errors={errors}
       />
       <Input
         name='password'
         label='Mật khẩu'
         onChange={handleChange}
-        onInput={validate}
         value={formData.password}
         placeholder='Nhập mật khẩu của bạn'
-        required
         errors={errors}
       />
       <div

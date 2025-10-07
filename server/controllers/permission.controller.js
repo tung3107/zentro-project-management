@@ -18,7 +18,7 @@ exports.getOnePermission = catchAsync(async (req, res, next) => {
   });
 });
 exports.getListOfPermissionByRole = catchAsync(async (req, res, next) => {
-  const { role_id } = req.user;
+  const { role_id, is_change_password } = req.user;
   const data = await new PermissionService().getListOfPermissionByRole(role_id);
   if (!data) {
     throw new ApiError("Permission id không tồn tại", 404);
@@ -27,6 +27,18 @@ exports.getListOfPermissionByRole = catchAsync(async (req, res, next) => {
     status: "success",
     data: {
       data,
+      is_change_password,
     },
+  });
+});
+
+exports.getListOfPermissionByResource = catchAsync(async (req, res, next) => {
+  const data = await new PermissionService().getListOfPermissionByResource();
+  if (!data) {
+    throw new ApiError("Permission không tồn tại", 404);
+  }
+  res.status(200).json({
+    status: "success",
+    data,
   });
 });

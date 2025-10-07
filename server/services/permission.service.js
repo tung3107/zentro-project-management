@@ -34,6 +34,50 @@ class PermissionService {
 
     return role;
   }
+
+  async getListOfPermissionByResource() {
+    try {
+      const data = await Permission.findAll({
+        where: { is_system: 0 },
+        raw: true, // để lấy plain object, không phải instance
+      });
+
+      const groupedPermissions = data.reduce((acc, perm) => {
+        const {
+          resource,
+          action,
+          permission_id,
+          permission_name,
+          description,
+        } = perm;
+
+        if (!acc[resource]) {
+          acc[resource] = [];
+        }
+
+        acc[resource].push({
+          permission_id,
+          permission_name,
+          description,
+          action,
+          resource,
+        });
+
+        return acc;
+      }, {});
+
+      // Sắp xếp action theo alphabet asc trong từng resource
+      Object.keys(groupedPermissions).forEach((resource) => {
+        groupedPermissions[resource].sort((a, b) =>
+          a.action.localeCompare(b.action)
+        );
+      });
+
+      return groupedPermissions;
+    } catch (error) {
+      throw new ApiError(`Error: ${error.message}`, 400);
+    }
+  }
 }
 
 module.exports = PermissionService;

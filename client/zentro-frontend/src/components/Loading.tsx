@@ -12,7 +12,8 @@ const LoadingContainer = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.8);
+  width: 100%;
 `
 
 const LoadingDots = styled.div`

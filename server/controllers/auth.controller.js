@@ -56,10 +56,26 @@ exports.authorize = (resource, action) => {
       attributes: ["role_id"],
       raw: true,
     });
+
+    if (req.user.is_change_password) {
+      throw new ApiError("Bạn cần đổi mật khẩu trước khi sử dụng", 403);
+    }
+
     if (!allowed) throw new ApiError("Forbidden", 403);
     next();
   };
 };
+
+exports.logout = catchAsync(async (req, res, next) => {
+  const user_id = req.user.user_id;
+
+  const message = await new AuthService().logout(user_id);
+
+  res.status(200).json({
+    status: "success",
+    message,
+  });
+});
 
 exports.login = catchAsync(async (req, res, next) => {
   let { email, password, isRemember } = req.body;
@@ -121,5 +137,35 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     data: {
       message,
     },
+  });
+});
+
+exports.resetPasswordFirstLogin = catchAsync(async (req, res, next) => {
+  const { email, password, newPassword } = req.body;
+
+  const response = await new AuthService().resetPasswordFirstLogin(
+    email,
+    password,
+    newPassword,
+    (is_change_password = 1)
+  );
+  res.status(200).json({
+    status: "success",
+    response,
+  });
+});
+
+exports.changePassword = catchAsync(async (req, res, next) => {
+  const { email, password, newPassword } = req.body;
+
+  const response = await new AuthService().resetPasswordFirstLogin(
+    email,
+    password,
+    newPassword,
+    (is_change_password = 0)
+  );
+  res.status(200).json({
+    status: "success",
+    response,
   });
 });

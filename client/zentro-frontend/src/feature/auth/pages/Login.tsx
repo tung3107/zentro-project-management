@@ -50,13 +50,14 @@ const LoginMainPage = styled.div`
                 align-items: center;
                 
                 h1 {
-                    font-size: 2.5rem;  
+                    font-size: 2rem; 
                     color: var(--text);
                 }
                 p {
-                    font-size: 1.25rem;
+                    font-size: 0.95rem;
                     color: #636364;
                     align-content: center;
+                    text-align: center;
                 }
             }
 

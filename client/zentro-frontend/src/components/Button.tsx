@@ -7,6 +7,7 @@ type ButtonProps = {
   size?: 'sm' | 'md' | 'lg'
   onClick?: () => void
   disabled?: boolean
+  className?: string
 }
 
 const sizeType = {
@@ -35,14 +36,23 @@ const StyledButton = styled.button<{ size: ButtonProps['size'] }>`
   transition: all 0.2s ease-in-out;
 
   &:hover {
-    background-color: var(--primary-light);
+    background-color: rgb(204, 60, 60);
+    outline-offset: 0;
+    box-shadow: 0 0 0 0.2rem rgb(254, 191, 191);
   }
   ${({ size = 'md' }) => sizeType[size]}
 `
 
-export default function Button({ children, type = 'button', size = 'md', onClick, disabled = false }: ButtonProps) {
+export default function Button({
+  children,
+  type = 'button',
+  size = 'md',
+  onClick,
+  disabled = false,
+  className
+}: ButtonProps) {
   return (
-    <StyledButton type={type} size={size} onClick={onClick} disabled={disabled}>
+    <StyledButton className={className} type={type} size={size} onClick={onClick} disabled={disabled}>
       {children}
     </StyledButton>
   )

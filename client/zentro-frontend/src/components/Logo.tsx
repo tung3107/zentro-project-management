@@ -1,5 +1,10 @@
 import React from 'react'
 
-export default function Logo({ width = 72 }: { width?: number }) {
-  return <img src='/TEXT.svg' className='logo' width={width} />
+interface LogoProps {
+  width?: number
+  notext?: boolean
+}
+
+export default function Logo({ width = 72, notext = false }: LogoProps) {
+  return <img src={notext ? '/Icon-notext.svg' : '/TEXT.svg'} className='logo' width={width} />
 }

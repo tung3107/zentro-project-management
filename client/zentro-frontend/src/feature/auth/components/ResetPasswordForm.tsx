@@ -56,6 +56,9 @@ export default function ResetPasswordForm() {
       const res = await resetPasswordAPI(tempResetToken, formData.newPassword, email)
       toast.success(res.data.message.message)
 
+      localStorage.removeItem('tempResetToken')
+      localStorage.removeItem('email')
+
       navigate('/reset-success', { replace: true })
     } catch (err) {
       const error = err as AxiosError<ApiErrorResponse>
@@ -95,7 +98,6 @@ export default function ResetPasswordForm() {
         onInput={validate}
         value={formData.newPassword}
         placeholder='Nhập mật khẩu mới của bạn của bạn'
-        required
         errors={errors}
       />
       <Input
@@ -105,7 +107,6 @@ export default function ResetPasswordForm() {
         onInput={validate}
         value={formData.confirmPassword}
         placeholder='Xác nhận lại mật khẩu'
-        required
         errors={errors}
       />
       <Button type='submit' size='lg' disabled={isLoading}>

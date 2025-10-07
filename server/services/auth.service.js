@@ -5,13 +5,59 @@ const { Op } = require("sequelize");
 const User = require("../models/User");
 const ApiError = require("../utils/ApiError");
 const emailService = require("./email.service");
+const Role = require("../models/Role");
 
 class AuthService {
+  async resetPasswordFirstLogin(
+    email,
+    password,
+    newPassword,
+    is_change_password
+  ) {
+    const user = await User.scope("withPassword").findOne({ where: { email } });
+
+    if (!user) {
+      throw new ApiError("Forbidden", 403);
+    }
+
+    const isPasswordValid = await user.comparePassword(password);
+
+    if (!isPasswordValid) {
+      throw new ApiError("Sai mật khẩu", 400);
+    }
+
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,35}$/;
+
+    if (!newPassword || newPassword.length < 8 || !regex.test(newPassword)) {
+      throw new ApiError("Password must be at least 8 - 35 characters", 400);
+    }
+    user.password = newPassword;
+
+    if (is_change_password) {
+      user.is_change_password = false;
+    }
+
+    await user.save({ validate: false });
+
+    return {
+      message: "Chuyển mật khẩu thành công!",
+      is_change_password: false,
+    };
+  }
+
   async login(email, password, isRemember) {
     if (!email || !password) {
       throw new ApiError("All field cannot be empty!", 400);
     }
-    const user = await User.scope("withPassword").findOne({ where: { email } });
+    const user = await User.scope("withPassword").findOne({
+      where: { email },
+      include: [
+        {
+          model: Role,
+          attributes: ["role_name"], // chỉ lấy role_name thôi
+        },
+      ],
+    });
 
     if (!user) {
       throw new ApiError("Sai mật khẩu hoặc email", 400);
@@ -34,10 +80,26 @@ class AuthService {
         last_name: user.last_name,
         email: user.email,
         role_id: user.role_id,
+        role_name: user.Role.role_name,
       },
       accessToken,
       refreshToken,
     };
+  }
+  async logout(user_id) {
+    try {
+      const user = await User.findByPk(user_id);
+
+      if (!user) throw new ApiError("Không tìm thấy user", 400);
+
+      user.refreshToken = null;
+
+      await user.save({ validate: false });
+
+      return "Log out thanh cong";
+    } catch (error) {
+      throw new ApiError(`Error: ${error.message}`, 401);
+    }
   }
   async refreshToken(refreshToken) {
     try {

@@ -8,7 +8,12 @@ import ProtectedRoute from './util/ProtectedRoute'
 import Can from './util/Can'
 import ResetPassword from './feature/auth/pages/ResetPassword'
 import ResetSuccess from './feature/auth/pages/ResetSuccess'
-import MainLayout from './components/MainLayout'
+import Project from './feature/admin/pages/Project'
+import AdminMainLayout from './feature/admin/components/AdminMainLayout'
+import User from './feature/admin/pages/User'
+import ResetPasswordFirstLogin from './feature/auth/pages/ResetPasswordFirstLogin'
+import Role from './feature/admin/pages/Role'
+import Dashboard from './feature/admin/pages/Dashboard'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,13 +40,38 @@ function App() {
             <Route path='reset-password' element={<ResetPassword />} />
             <Route path='reset-success' element={<ResetSuccess />} />
 
-            <Route element={<ProtectedRoute />}>
-              {/* Tất cả route con bên trong sẽ được bảo vệ */}
+            <Route
+              path='reset-password-first-login'
+              element={
+                <ProtectedRoute>
+                  <ResetPasswordFirstLogin />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path='admin'
+              element={
+                <ProtectedRoute>
+                  <AdminMainLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route
-                path='dashboard'
+                path='projects'
                 element={
                   <Can resource='dashboard' action='read'>
-                    <MainLayout />
+                    <Project />
+                  </Can>
+                }
+              />
+              <Route path='dashboard' element={<Dashboard />} />
+              <Route path='roles' element={<Role />} />
+              <Route
+                path='users'
+                element={
+                  <Can resource='user' action='read'>
+                    <User />
                   </Can>
                 }
               />

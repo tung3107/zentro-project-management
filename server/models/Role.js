@@ -13,7 +13,7 @@ Role.init(
       primaryKey: true,
       autoIncrement: true,
     },
-    is_Sytem: {
+    is_System: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },

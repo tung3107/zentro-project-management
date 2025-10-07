@@ -17,10 +17,13 @@ interface AuthState {
   isAuthenticated: boolean
   permissions: Permission[]
   isPermLoading: boolean
+  is_change_password: boolean
   setPermLoading: (b: boolean) => void
   setUser: (user: User) => void
   setTokens: (access: string, refresh: string) => void
   setPermission: (permissions: Permission[]) => void
+  setIsChangePassword: (b: boolean) => void
+
   logout: () => void
 }
 
@@ -33,6 +36,9 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isPermLoading: false,
       permissions: [],
+      is_change_password: true,
+
+      setIsChangePassword: (b) => set({ is_change_password: b }),
 
       setPermLoading: (b) => set({ isPermLoading: b }),
 
@@ -57,6 +63,7 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         user: state.user,
+        is_change_password: state.is_change_password,
         permissions: state.permissions,
         isAuthenticated: state.isAuthenticated
       })

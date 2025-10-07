@@ -79,10 +79,8 @@ export default function ForgotPasswordForm() {
         name='email'
         label='Email'
         onChange={handleChange}
-        onInput={validate}
         value={formData.email}
         placeholder='Nhập email của bạn'
-        required
         errors={errors}
       />
       <Button type='submit' size='lg' disabled={isLoading}>

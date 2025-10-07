@@ -3,8 +3,8 @@ import { useAuthStore } from '../feature/auth/stores/authStore'
 import Loading from '../components/Loading'
 import { Navigate, Outlet } from 'react-router-dom'
 
-export default function ProtectedRoute() {
-  const { accessToken, isPermLoading, isAuthenticated } = useAuthStore()
+export default function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { accessToken, isPermLoading, isAuthenticated, is_change_password, user } = useAuthStore()
 
   const hasHydrated = useAuthStore.persist.hasHydrated()
 
@@ -15,9 +15,16 @@ export default function ProtectedRoute() {
     return <Loading />
   }
 
+  if (location.pathname !== '/reset-password-first-login' && is_change_password && isAuthenticated && accessToken)
+    return <Navigate to='/reset-password-first-login' replace state={{ email: user?.email }} />
+
+  if (location.pathname === '/reset-password-first-login' && is_change_password && isAuthenticated && accessToken) {
+    return children
+  }
+
   // 2️⃣ Đã xác thực & có token → cho vào
   if (isAuthenticated && accessToken) {
-    return <Outlet />
+    return children
   }
 
   // 3️⃣ Mọi trường hợp còn lại → đá về login

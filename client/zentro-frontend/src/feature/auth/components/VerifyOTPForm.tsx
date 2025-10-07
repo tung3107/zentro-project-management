@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { forgotPasswordAPI, verifyOTPAPI } from '../services/auth.service'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
-import OTPInput from '../../../components/OTPInput'
+import OTPInput from './OTPInput'
 
 export default function VerifyOTPForm() {
   const [otp, setOtp] = useState('')

@@ -6,18 +6,32 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const Role = require("./Role");
 
+function generateUserId() {
+  const year = new Date().getFullYear();
+  const array = new Uint32Array(1);
+  const time = Date.now().toString().slice(-3);
+  crypto.webcrypto.getRandomValues(array); // dùng webcrypto
+  const random3 = (array[0] % 1000).toString().padStart(3, "0");
+  return `${year}${time}${random3}`;
+}
+
 class User extends Model {}
 
 User.init(
   {
     user_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING(35),
       primaryKey: true,
       autoIncrement: true,
     },
+    is_change_password: { type: DataTypes.BOOLEAN, defaultValue: false },
+    is_delete: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     email: {
       type: DataTypes.CHAR(50),
-      allowNull: false,
+      allowNull: true,
       unique: {
         args: true,
         msg: "Email address already in use!",
@@ -69,6 +83,10 @@ User.init(
     },
     phone: {
       type: DataTypes.STRING(255),
+      unique: {
+        args: true,
+        msg: "Phone already in use!",
+      },
     },
     role_id: {
       type: DataTypes.INTEGER,
@@ -101,6 +119,12 @@ User.init(
     timestamps: false,
     hooks: {
       beforeCreate: async (user) => {
+        if (!user.user_id) {
+          user.user_id = generateUserId();
+        }
+
+        user.is_change_password = 1;
+
         if (user.password && !user.password.startsWith("$2b$")) {
           const rounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
           user.password = await bcrypt.hash(user.password, rounds);

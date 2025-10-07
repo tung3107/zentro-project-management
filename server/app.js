@@ -4,11 +4,21 @@ const cors = require("cors");
 
 const authRoutes = require("./routes/auth.routes");
 const permissionRoutes = require("./routes/permission.routes");
+const projectRoutes = require("./routes/project.routes");
+const userRoutes = require("./routes/user.routes");
+const roleRoutes = require("./routes/role.routes");
+const memberRoutes = require("./routes/member.routes");
+
 const globalErrorHandler = require("./middlewares/errorHandle");
 const ApiError = require("./utils/ApiError");
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true, // nếu truyền cookie/token
+  })
+);
 app.use(express.json());
 
 app.use(express.json({ limit: "10kb" }));
@@ -20,9 +30,13 @@ if (process.env.NODE_ENV === "development") {
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/permission", permissionRoutes);
+app.use("/api/v1/projects", projectRoutes);
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/roles", roleRoutes);
+app.use("/api/v1/members", memberRoutes);
 
 app.use((req, res, next) => {
-  next(new ApiError(404, "Không tìm thấy route"));
+  next(new ApiError("Không tìm thấy route", 404));
 });
 
 // Global error handling middleware

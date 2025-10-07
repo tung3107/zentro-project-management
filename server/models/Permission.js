@@ -38,6 +38,10 @@ Permission.init(
     action: {
       type: DataTypes.STRING(100),
     },
+    is_system: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
   },
   {
     sequelize, // KHÔNG PHẢI sequelize.define() nữa!
