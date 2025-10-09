@@ -27,10 +27,18 @@ interface MemberListEditProps {
   roles: RoleType[]
   onChange: (members: MemberType[]) => void
   searchUsers: (keyword: string) => Promise<MemberType[]> // search API FE callback
+  isAddedNew?: boolean
 }
 
-export default function MemberListEdit({ value, roles, onChange, searchUsers }: MemberListEditProps) {
-  const [editMode, setEditMode] = useState(false)
+export default function MemberListEdit({
+  value,
+  roles,
+  onChange,
+  searchUsers,
+  isAddedNew = false
+}: MemberListEditProps) {
+  const [editMode, setEditMode] = useState(isAddedNew)
+  const [addedNew, setAddedNew] = useState(isAddedNew)
   const [members, setMembers] = useState<MemberType[]>(value)
   const [searchVal, setSearchVal] = useState('')
   const [suggest, setSuggest] = useState<MemberType[]>([])
@@ -52,12 +60,12 @@ export default function MemberListEdit({ value, roles, onChange, searchUsers }: 
   }, [])
 
   useEffect(() => {
-    if (!editMode) setMembers(value)
-  }, [editMode, value])
+    if (!editMode || !isAddedNew) setMembers(value)
+  }, [editMode, value, isAddedNew])
 
   // Search user API gọi vào đây
   useEffect(() => {
-    if (!editMode || !searchVal.trim()) {
+    if ((!editMode && !addedNew) || !searchVal.trim()) {
       setSuggest([])
       return
     }
@@ -84,7 +92,7 @@ export default function MemberListEdit({ value, roles, onChange, searchUsers }: 
         .finally(() => setSearching(false))
     }, 400)
     return () => clearTimeout(delay)
-  }, [searchVal, editMode, members, searchUsers])
+  }, [searchVal, editMode, members, searchUsers, addedNew])
 
   const handleRemove = (id: string) => setMembers(members.filter((m) => m.user.user_id !== id))
   const handleAdd = (user: MemberType) => {
@@ -113,6 +121,7 @@ export default function MemberListEdit({ value, roles, onChange, searchUsers }: 
     }
 
     setEditMode(false)
+    setAddedNew(false)
     onChange(members)
   }
 
@@ -120,25 +129,30 @@ export default function MemberListEdit({ value, roles, onChange, searchUsers }: 
     <div>
       <div className='flex items-center justify-between mb-3'>
         <h3 className='font-semibold text-base'>Thành viên dự án</h3>
-        <button
-          type='button'
-          className='border px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-sm'
-          onClick={() => setEditMode((e) => !e)}
-        >
-          {editMode ? 'Hủy' : 'Chỉnh sửa'}
-        </button>
+
+        {/* Ẩn nút chỉnh sửa nếu isAddedNew = true */}
+        {!addedNew && (
+          <button
+            type='button'
+            className='border px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-sm'
+            onClick={() => setEditMode((e) => !e)}
+          >
+            {editMode ? 'Hủy' : 'Chỉnh sửa'}
+          </button>
+        )}
       </div>
-      {editMode && (
+
+      {/* Nếu đang edit hoặc isAddedNew thì luôn hiển thị ô search */}
+      {(editMode || addedNew) && (
         <div className='mb-3 relative' ref={dropdownRef}>
           <input
             className='border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-0'
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
             placeholder='Tìm kiếm thành viên để thêm...'
-            autoFocus
           />
-          {editMode && (searching || suggest.length > 0 || searchVal.trim()) && (
-            <div className='absolute mt-1 p-3 w-full rounded-lg shadow bg-white border z-10 max-h-60 overflow-y-auto'>
+          {(searching || suggest.length > 0 || searchVal.trim()) && (
+            <div className=' absolute mt-1 p-3 w-full rounded-lg shadow bg-white border max-h-60 overflow-y-auto'>
               {searching && <span className='block p-3 text-sm text-gray-400 text-center'>Đang tìm...</span>}
 
               {!searching &&
@@ -181,6 +195,8 @@ export default function MemberListEdit({ value, roles, onChange, searchUsers }: 
           )}
         </div>
       )}
+
+      {/* Danh sách member */}
       <div className='flex flex-col gap-2'>
         {members.map((m) => (
           <div
@@ -198,13 +214,13 @@ export default function MemberListEdit({ value, roles, onChange, searchUsers }: 
                 <span className='text-gray-400'>• ID: {m.user.user_id}</span>
               </div>
             </div>
-            {editMode && (
+            {(editMode || addedNew) && (
               <>
                 <select
                   value={m.role.role_id ?? ''}
                   className='border px-2 py-1 mr-1 rounded text-sm'
                   onChange={(e) => {
-                    const selectedId = Number(e.target.value) // hoặc String tuỳ role_id là gì
+                    const selectedId = Number(e.target.value)
                     const selectedRole = roles.find((r) => r.role_id === selectedId)
                     handleRole(m.user.user_id, {
                       role_id: selectedRole?.role_id ?? roles[0].role_id,
@@ -221,14 +237,14 @@ export default function MemberListEdit({ value, roles, onChange, searchUsers }: 
 
                 <div className='p-2 rounded-lg border border-red-300'>
                   <Trash2
-                    className='w-4 h-4 cursor-pointer  hover:scale-110 transition-transform text-red-500'
+                    className='w-4 h-4 cursor-pointer hover:scale-110 transition-transform text-red-500'
                     onClick={() => handleRemove(m.user.user_id ?? '')}
                     strokeWidth={1.5}
                   />
                 </div>
               </>
             )}
-            {!editMode && (
+            {!editMode && !addedNew && (
               <span className='ml-auto px-2.5 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-indigo-100 to-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'>
                 {m.role.role_name}
               </span>
@@ -236,14 +252,23 @@ export default function MemberListEdit({ value, roles, onChange, searchUsers }: 
           </div>
         ))}
       </div>
-      {editMode && (
+
+      {(editMode || addedNew) && (
         <div className='flex justify-end mt-3'>
           <button
-            className='bg-blue-600 text-white font-semibold px-4 py-2 rounded hover:bg-blue-700'
             type='button'
             onClick={handleSave}
+            className='
+    bg-violet-400 hover:bg-violet-500
+    text-white font-medium
+    px-5 py-2.5
+    rounded-xl
+    shadow-sm hover:shadow-md
+    transition-all duration-200
+    focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-offset-1
+  '
           >
-            Lưu thông tin
+            💾 Lưu thành viên
           </button>
         </div>
       )}

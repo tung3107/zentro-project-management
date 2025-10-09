@@ -4,9 +4,16 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '../../auth/hooks/useAuth'
-import { Icon } from 'lucide-react'
-import Button from '../../../components/Button'
 import Step1Com from './Step1Com'
+import ProgressBar from './ProgressBar'
+import Step2Com from './Step2Com'
+import Button from '../../../components/Button'
+import { LoadingBlob } from '../../../components/LoadingBlob'
+import { ArrowRightCircle, Check, ChevronLeft, X } from 'lucide-react'
+import type { MemberType, RoleType } from './MemberListEdit'
+import Step3Com from './Step3Com'
+import { createProjectAPI } from '../service/project.service'
+import { createProjectMembersAPI } from '../service/user.service'
 
 export default function AddProjectCom({
   setAddModalOpen,
@@ -17,35 +24,59 @@ export default function AddProjectCom({
   setAddModalContent: Dispatch<SetStateAction<React.ReactNode | null>>
   onSuccess?: () => void
 }) {
-  const [formData, setFormData] = useState<Project>({})
+  const [formData, setFormData] = useState<Project>({
+    project_id: '',
+    project_name: '',
+    description: '',
+    leader_name: '',
+    start_date: new Date(),
+    end_date: undefined,
+    priority: undefined
+  })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
 
-  const nextStep = () => setCurrentStep((s) => Math.min(s + 1, 3))
-  const prevStep = () => setCurrentStep((s) => Math.max(s - 1, 1))
+  const [members, setMembers] = useState<MemberType[]>([])
+  const [memberRoles, setMemberRoles] = useState<RoleType[]>([])
 
   const validate = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.project_name) newErrors.project_name = 'Tên project là trường bắt buộc'
+    if (!formData.project_name && currentStep === 1) newErrors.project_name = 'Tên project là trường bắt buộc'
 
-    if (!formData.start_date) {
-      newErrors.start_date = 'Ngày bắt đầu là trường bắt buộc'
+    if (formData.project_name && formData.project_name.length > 255 && currentStep === 1)
+      newErrors.project_name = 'Tên project không được quá 255 ký tự'
+
+    if (formData.description && formData.description.length > 255 && currentStep === 1)
+      newErrors.description = 'Mô tả không được quá 255 ký tự'
+
+    if (currentStep === 3 && members.length === 0) {
+      newErrors.members = 'Phải thêm ít nhất 1 thành viên là Leader'
     }
 
-    if (!formData.end_date) {
-      newErrors.end_date = 'Ngày kết thúc là trường bắt buộc'
-    }
+    if (currentStep === 2) {
+      if (formData.priority === undefined) {
+        newErrors.priority = 'Độ ưu tiên là trường bắt buộc'
+      }
 
-    if (formData.start_date && formData.end_date) {
-      const start = new Date(formData.start_date)
-      const end = new Date(formData.end_date)
+      if (!formData.start_date) {
+        newErrors.start_date = 'Ngày bắt đầu là trường bắt buộc'
+      }
 
-      if (start > end) {
-        newErrors.start_date = 'Ngày bắt đầu không được sau ngày kết thúc'
-        newErrors.end_date = 'Ngày kết thúc không được trước ngày bắt đầu'
+      if (!formData.end_date) {
+        newErrors.end_date = 'Ngày kết thúc là trường bắt buộc'
+      }
+
+      if (formData.start_date && formData.end_date) {
+        const start = new Date(formData.start_date)
+        const end = new Date(formData.end_date)
+
+        if (start > end) {
+          newErrors.start_date = 'Ngày bắt đầu không được sau ngày kết thúc'
+          newErrors.end_date = 'Ngày kết thúc không được trước ngày bắt đầu'
+        }
       }
     }
 
@@ -61,7 +92,7 @@ export default function AddProjectCom({
     })
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, checked, type } = e.target
     setFormData({
       ...formData,
@@ -69,18 +100,19 @@ export default function AddProjectCom({
     })
   }
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { value, name } = e.target
+  const handleInputChange = (field: string, value: number | string) => {
     setFormData({
       ...formData,
-      [name]: value
+      [field]: value
     })
   }
 
   const handleSubmit = async (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    if (validate()) {
+    if (currentStep < 3 && validate()) setCurrentStep((prep) => prep + 1)
+
+    if (validate() && currentStep === 3) {
       try {
         setIsLoading(true)
         const hasFile = formData.avatar && typeof formData.avatar !== 'string' && formData.avatar instanceof File
@@ -99,9 +131,9 @@ export default function AddProjectCom({
           })
           toSend = apiForm
         }
-        // const res = await updateProjectAPI(formData.project_id, toSend)
+        const res = await createProjectAPI(toSend)
 
-        // const data = await updateProjectMembersAPI(project.project_id, members)
+        const data = await createProjectMembersAPI(res.data.project_id, members)
 
         onSuccess?.()
         toast.success('Tạo dự án thành công')
@@ -118,7 +150,11 @@ export default function AddProjectCom({
   }
 
   return (
-    <form style={{ color: '#1C272D' }} className=' relative flex-1 mb-[80px]  overflow-y-auto' onSubmit={handleSubmit}>
+    <form
+      style={{ color: '#1C272D' }}
+      className=' relative flex-1 mb-[80px]  overflow-y-auto overflow-hidden relative'
+      onSubmit={handleSubmit}
+    >
       {/* Header */}
       <div>
         <p className='text-sm text-gray-500 mt-1'>
@@ -128,49 +164,76 @@ export default function AddProjectCom({
       </div>
 
       {/* Progress Steps */}
-      <div className='flex items-center justify-between mt-6 w-full'>
-        {/* Step 1 */}
-        <div className='flex items-center flex-1'>
-          <div
-            className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold shadow-sm flex-shrink-0 transition-colors ${
-              currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-            }`}
-          >
-            {currentStep > 1 ? '✓' : '1'}
-          </div>
-          <div
-            className={`h-[4px] flex-1 rounded-full mx-6 transition-colors ${
-              currentStep > 1 ? 'bg-blue-500' : 'bg-gray-200'
-            }`}
-          ></div>
+      <ProgressBar currentStep={currentStep} />
+      <div
+        className='flex transition-transform duration-500 ease-in-out w-[300%]'
+        style={{ transform: `translateX(-${(currentStep - 1) * 33.3333}%)` }}
+      >
+        <div className='w-1/3 flex-shrink-0'>
+          <Step1Com setFormData={setFormData} errors={errors} formData={formData} handleChange={handleInputChange} />
         </div>
-
-        {/* Step 2 */}
-        <div className='flex items-center flex-1'>
-          <div
-            className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold flex-shrink-0 transition-colors ${
-              currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-            }`}
-          >
-            {currentStep > 2 ? '✓' : '2'}
-          </div>
-          <div
-            className={`h-[4px] flex-1 rounded-full mx-6 transition-colors ${
-              currentStep > 2 ? 'bg-blue-500' : 'bg-gray-200'
-            }`}
-          ></div>
+        <div className='w-1/3 flex-shrink-0'>
+          <Step2Com
+            formData={formData}
+            handleChange={handleInputChange}
+            errors={errors}
+            handleDateChange={handleDateChange}
+          />
         </div>
-
-        {/* Step 3 */}
-        <div
-          className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold flex-shrink-0 transition-colors ${
-            currentStep === 3 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-          }`}
-        >
-          3
+        <div className='w-1/3 flex-shrink-0'>
+          <Step3Com
+            members={members}
+            memberRoles={memberRoles}
+            setMemberRoles={setMemberRoles}
+            setMembers={setMembers}
+            errors={errors}
+          />
         </div>
       </div>
-      {currentStep === 1 && <Step1Com />}
+
+      <div className='flex flex-row justify-center gap-4 px-4 py-4 border-t border-gray-300 fixed bottom-0 left-0 w-full bg-white z-50 items-center'>
+        <div className='flex flex-row justify-between w-full'>
+          <button
+            className='px-4 py-2 flex items-center gap-2 bg-transparent! hover:underline cursor-pointer'
+            type='button'
+            onClick={() => {
+              if (currentStep > 1) {
+                setCurrentStep((prep) => prep - 1)
+              } else {
+                setAddModalOpen(false)
+                setAddModalContent(null)
+              }
+            }}
+          >
+            {currentStep > 1 ? (
+              <>
+                <ChevronLeft strokeWidth={1.6} size={18} />
+                <span className='text-md text-gray-600!'>Quay lại</span>
+              </>
+            ) : (
+              <>
+                <X strokeWidth={1.5} size={18} />
+                <span className='text-md text-gray-600!'>Hủy bỏ</span>
+              </>
+            )}
+          </button>
+          <Button className={`flex items-center gap-2 bg-blue-600!`} type='submit'>
+            {isLoading && currentStep === 3 ? (
+              <LoadingBlob />
+            ) : currentStep === 3 ? (
+              <>
+                <Check strokeWidth={1.5} size={18} />
+                <span className='text-md'>Lưu thay đổi</span>
+              </>
+            ) : (
+              <>
+                <span className='text-md'>Tiếp theo</span>
+                <ArrowRightCircle strokeWidth={1.5} size={18} />
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
     </form>
   )
 }

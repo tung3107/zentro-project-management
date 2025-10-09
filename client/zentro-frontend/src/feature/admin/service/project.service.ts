@@ -16,3 +16,8 @@ export const userProjectAPI = async (user_id: string) => {
   const response = await api.get(`/projects/get-project-by-user/${user_id}`)
   return response.data
 }
+
+export const createProjectAPI = async (project: Project) => {
+  const response = await api.post(`/projects`, project)
+  return response.data
+}

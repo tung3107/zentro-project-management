@@ -32,3 +32,17 @@ exports.updateMemberOfProject = catchAsync(async (req, res, next) => {
     data,
   });
 });
+
+exports.createMemberByProject = catchAsync(async (req, res, next) => {
+  const { project_id, members } = req.body;
+
+  const data = await new MemberService().createMemberByProject(
+    project_id,
+    members
+  );
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});

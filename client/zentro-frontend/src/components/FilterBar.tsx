@@ -1,5 +1,6 @@
 import DateRangePicker from './DateRangePicker'
 import Dropdown from './Dropdown'
+import PrioritySelect from './PrioritySelect'
 import StatusDropdown from './StatusDropdown'
 // import DatePicker from './DatePicker' // giả sử có component này
 
@@ -18,6 +19,34 @@ const FilterBar = ({ columns, filterState, setFilterState }: any) => {
           }
 
           if (col.filterType === 'dropdown') {
+            if (col.apiQuery === 'priority') {
+              return (
+                <PrioritySelect
+                  value={value}
+                  onChange={(val) =>
+                    setFilterState((prev: any) => ({
+                      ...prev,
+                      [col.apiQuery]: val
+                    }))
+                  }
+                  className='h-10!'
+                />
+              )
+            }
+            if (col.apiQuery === 'status') {
+              return (
+                <StatusDropdown
+                  value={value}
+                  onChange={(val) =>
+                    setFilterState((prev: any) => ({
+                      ...prev,
+                      [col.apiQuery]: val
+                    }))
+                  }
+                  className={'h-10!'}
+                />
+              )
+            }
             if (col.apiEndPoint) {
               return (
                 <Dropdown
@@ -36,12 +65,12 @@ const FilterBar = ({ columns, filterState, setFilterState }: any) => {
                 <StatusDropdown
                   key={col.field}
                   value={value}
-                  onChange={(status: string) => {
+                  onChange={(val) =>
                     setFilterState((prev: any) => ({
                       ...prev,
-                      [col.apiQuery]: status
+                      [col.apiQuery]: val
                     }))
-                  }}
+                  }
                   className={'h-10'}
                 />
               )

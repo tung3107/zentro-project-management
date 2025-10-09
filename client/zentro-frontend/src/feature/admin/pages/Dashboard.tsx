@@ -13,7 +13,6 @@ const priorityColors = [
 ]
 
 const CssLayout = styled.div`
-  padding: 30px 40px;
   .p-tabview .p-tabview-nav,
   .p-tabview .p-tabview-nav-link,
   .p-tabview .p-tabview-nav li,
@@ -128,10 +127,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <CssLayout>
-      <h2 style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Dự án Zentro</h2>
-
       <TabView
-        className='mt-[30px] custom-tabview'
+        className='mt-[20px] custom-tabview'
         activeIndex={activeIndex}
         onTabChange={(e) => setActiveIndex(e.index)}
       >

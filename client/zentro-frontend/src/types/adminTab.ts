@@ -3,12 +3,6 @@ import type { MenuItem } from '../components/Navigation'
 
 export const menuItems: MenuItem[] = [
   {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: LayoutGrid,
-    path: '/admin/dashboard'
-  },
-  {
     id: 'users',
     label: 'Người Dùng',
     icon: Users,

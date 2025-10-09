@@ -6,6 +6,7 @@ const { getAllWithParams } = require("../utils/queryBuilder");
 const Member = require("../models/Member");
 const { uploadImg } = require("../utils/uploadImg");
 const Role = require("../models/Role");
+const { sequelize } = require("../config/database");
 
 class ProjectService {
   async getProjectListByUser(user_id) {
@@ -38,6 +39,18 @@ class ProjectService {
       const data = await Project.findByPk(project_id);
 
       if (!data) throw new ApiError("Không tìm thấy ID", 400);
+
+      await sequelize.transaction(async (t) => {
+        await Member.destroy({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+
+        await Project.destroy({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+      });
       return "Xóa thành công";
     } catch (error) {
       throw new ApiError(`Error: ${error.message}`, 400);
@@ -69,6 +82,23 @@ class ProjectService {
       });
 
       const data = await Project.findByPk(project_id);
+
+      return data;
+    } catch (err) {
+      throw new ApiError(`Error: ${err.message}`, 400);
+    }
+  }
+  async createOneProject(body) {
+    try {
+      let avatar = null;
+
+      if (body.file) {
+        avatar = await uploadImg(body.file);
+      }
+
+      const projectData = { ...body, avatar: avatar };
+
+      const data = await Project.create(projectData);
 
       return data;
     } catch (err) {

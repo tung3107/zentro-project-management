@@ -47,6 +47,12 @@ export async function updateProjectMembersAPI(project_id: string, members: Membe
   return response.data
 }
 
+export async function createProjectMembersAPI(project_id: string, members: MemberType[]) {
+  const response = await api.post(`/members/`, { project_id, members })
+
+  return response.data
+}
+
 // export const deleteProjectAPI = async (project_id: number) => {
 //   const response = await api.delete(`/projects/${project_id}`)
 //   return response.data

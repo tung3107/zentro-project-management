@@ -67,8 +67,17 @@ Project.init(
       },
       defaultValue: "ĐANG CHUẨN BỊ",
     },
+    priority: {
+      type: DataTypes.TINYINT(1),
+      allowNull: false,
+    },
     avatar: {
       type: DataTypes.CHAR(255),
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
   },
   {

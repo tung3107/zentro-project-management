@@ -106,6 +106,34 @@ class MemberService {
       throw new ApiError(`Error: ${error.message}`, 400);
     }
   }
+
+  async createMemberByProject(project_id, members) {
+    try {
+      const isExisted = Project.findByPk(project_id);
+
+      if (!isExisted) throw new ApiError("Không tìm thấy project", 400);
+      return sequelize.transaction(async (t) => {
+        for (const m of members) {
+          const user_id = m.user.user_id;
+          const role_id = m.role.role_id;
+          await Member.create(
+            {
+              project_id: project_id,
+              user_id: user_id,
+              role_id: role_id,
+            },
+            { transaction: t }
+          );
+        }
+        return Member.findAll({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+      });
+    } catch (error) {
+      throw new ApiError(`Error: ${error.message}`, 400);
+    }
+  }
 }
 
 module.exports = MemberService;

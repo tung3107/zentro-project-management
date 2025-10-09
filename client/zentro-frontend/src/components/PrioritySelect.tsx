@@ -4,23 +4,22 @@ import styled from 'styled-components'
 import { Flame, ArrowUp, Minus, ArrowDown, BoxSelect } from 'lucide-react'
 
 type PriorityOption = {
-  status: string
+  value: number
+  label: string
   color: string
-  bg: string
-  status_code: string
+  icon: JSX.Element
 }
 
-const statuses = [
-  { status: 'Chọn trạng thái', color: '', bg: '', status_code: 'huhu' },
-  { status: 'ĐANG DIỄN RA', color: '#00D1D4', bg: '#EBFCFC', status_code: 'in_progress' },
-  { status: 'TẠM DỪNG', color: '#FF7A00', bg: '#FFF3E5', status_code: 'pending' },
-  { status: 'ĐANG CHUẨN BỊ', color: '#0085FF', bg: '#E6F3FF', status_code: 'planning' },
-  { status: 'BỊ HỦY', color: '#E34850', bg: '#FDECEC', status_code: 'cancelled' },
-  { status: 'HOÀN THÀNH', color: '#2D8A47', bg: '#E2F4E8', status_code: 'completed' }
+const priorities: PriorityOption[] = [
+  { value: -1, label: 'Chọn độ ưu tiên', color: '#000000ff', icon: <BoxSelect size={14} color='#ef4444' /> },
+  { value: 3, label: 'Cần gấp', color: '#ef4444', icon: <Flame size={14} color='#ef4444' /> },
+  { value: 2, label: 'Cao', color: '#fa7115ff', icon: <ArrowUp size={14} color='#fa7115ff' /> },
+  { value: 1, label: 'Trung bình', color: '#facc15', icon: <Minus size={14} color='#facc15' /> },
+  { value: 0, label: 'Thấp', color: '#22c55e', icon: <ArrowDown size={14} color='#22c55e' /> }
 ]
 
 interface PrioritySelectProps {
-  value: string
+  value: number
   onChange: (value: number) => void
   className?: string
 }
@@ -57,39 +56,40 @@ const StyledDropdown = styled(Dropdown)`
   }
 `
 
-const StatusDropdown: React.FC<PrioritySelectProps> = ({ value, onChange, className }) => {
+const PrioritySelect: React.FC<PrioritySelectProps> = ({ value, onChange, className }) => {
   const itemTemplate = (option: PriorityOption) => (
-    <div className='flex items-center gap-2' style={{ color: option.color, backgroundColor: option.bg }}>
-      <span>{option.status}</span>
+    <div className='flex items-center gap-2' style={{ color: option.color }}>
+      {option.icon}
+      <span>{option.label}</span>
     </div>
   )
 
   const valueTemplate = (option: PriorityOption | undefined) =>
     option ? (
-      <div className='flex items-center gap-2 ' style={{ color: option.color, backgroundColor: option.bg }}>
-        <span>{option.status}</span>
+      <div className='flex items-center gap-2' style={{ color: option.color }}>
+        {option.icon}
+        <span>{option.label}</span>
       </div>
     ) : (
-      <span style={{ color: '#999' }}>Chọn trạng thái</span>
+      <span style={{ color: '#999' }}>Chọn độ ưu tiên</span>
     )
 
   const handleChange = (e: DropdownChangeEvent) => {
-    onChange(e.target.value) // ép về number luôn
+    onChange(Number(e.value)) // ép về number luôn
   }
 
   return (
     <StyledDropdown
       value={value}
       onChange={handleChange}
-      options={statuses}
+      options={priorities}
       optionLabel='label'
-      optionValue='status'
       itemTemplate={itemTemplate}
       valueTemplate={valueTemplate}
-      placeholder='Chọn trạng thái'
+      placeholder='Chọn độ ưu tiên'
       className={`w-[160px] ${className}`}
     />
   )
 }
 
-export default StatusDropdown
+export default PrioritySelect

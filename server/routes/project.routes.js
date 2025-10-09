@@ -6,6 +6,7 @@ const {
   updateOneProject,
   deleteOneProject,
   getProjectListByUser,
+  createOneProject,
 } = require("../controllers/project.controller");
 const upload = require("../middlewares/upload");
 
@@ -13,7 +14,8 @@ const routes = express.Router();
 
 routes
   .route("/")
-  .get(protectRoute, authorize("project", "read"), getAllProjectsWithParam);
+  .get(protectRoute, authorize("project", "read"), getAllProjectsWithParam)
+  .post(protectRoute, upload.single("avatar"), createOneProject);
 
 routes
   .route("/:project_id")

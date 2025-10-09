@@ -41,7 +41,7 @@ export default function AdminNavigation() {
   return (
     <HeaderStyle>
       <NaviagtionStyle>
-        <Link to={'/admin/dashboard'}>Dashboard</Link>
+        <Link to={''}>Admin</Link>
         <ChevronRight color='#ABB8BC' strokeWidth={1.5} />
         <span>{currentPageName}</span>
       </NaviagtionStyle>

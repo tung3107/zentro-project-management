@@ -12,6 +12,9 @@ import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '../../auth/hooks/useAuth'
 import AddProjectCom from '../components/AddProjectCom'
+import Priority from '../../../components/Priority'
+import ProjectStats from '../components/ProjectStats'
+import { useNavigate } from 'react-router-dom'
 
 const ContentLayout = styled.div`
   padding: 30px 40px;
@@ -35,6 +38,7 @@ export default function Project() {
   const [addModalContent, setAddModalContent] = useState<React.ReactNode | null>(null)
 
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   const openModal = (content: ReactNode, title: string) => {
     setModalOpen(true)
@@ -107,7 +111,7 @@ export default function Project() {
     }
   }
 
-  const handleView = (project: Project) => {
+  const handleEdit = (project: Project) => {
     openModal(
       <EditProjectCom
         project={project}
@@ -123,6 +127,8 @@ export default function Project() {
     <ContentLayout>
       <div className='main-content-header'>
         <AdminNavigation />
+
+        <ProjectStats />
 
         <ReusableTable<Project>
           key={reloadKey}
@@ -155,6 +161,26 @@ export default function Project() {
             },
 
             {
+              field: 'status',
+              header: 'Trạng thái',
+              sortable: true,
+              filterable: true,
+              filterType: 'dropdown',
+              apiQuery: 'status',
+              body: (row: unknown) => <Status center={true} status={row.status} />
+            },
+
+            {
+              field: 'priority',
+              header: 'Độ ưu tiên',
+              apiQuery: 'priority',
+              sortable: true,
+              filterable: true,
+              filterType: 'dropdown',
+              body: (row: unknown) => <Priority center={true} priority={row.priority} />
+            },
+
+            {
               field: 'start_date',
               header: 'Ngày bắt đầu',
               sortable: true,
@@ -168,18 +194,10 @@ export default function Project() {
               sortable: true,
               width: '30px',
               body: (row: unknown) => formatDate(row.end_date)
-            },
-            {
-              field: 'status',
-              header: 'Trạng thái',
-              sortable: true,
-              filterable: true,
-              filterType: 'dropdown',
-              apiQuery: 'status',
-              body: (row: unknown) => <Status center={true} status={row.status} />
             }
           ]}
-          onView={(row) => handleView(row)}
+          onView={(row) => navigate(`/admin/projects/${row.project_id}`)}
+          onEdit={(row) => handleEdit(row)}
           onDelete={(row) => handleDelete(row)}
         />
       </div>

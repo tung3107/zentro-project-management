@@ -23,8 +23,15 @@ exports.deleteOneProject = catchAsync(async (req, res, next) => {
 
 exports.updateOneProject = catchAsync(async (req, res, next) => {
   const project_id = req.params.project_id;
-  const { project_name, description, leader_id, status, start_date, end_date } =
-    req.body;
+  const {
+    project_name,
+    description,
+    leader_id,
+    status,
+    start_date,
+    end_date,
+    priority,
+  } = req.body;
 
   let file = req.file;
 
@@ -36,6 +43,7 @@ exports.updateOneProject = catchAsync(async (req, res, next) => {
     start_date,
     end_date,
     file,
+    priority,
   });
 
   res.status(200).json({
@@ -66,6 +74,7 @@ exports.getAllProjectsWithParam = catchAsync(async (req, res, next) => {
     leader_id,
     start_dateFrom,
     end_dateTo,
+    priority,
   } = req.query;
 
   const result = await new ProjectService().getAllProjectsWithParam({
@@ -74,7 +83,13 @@ exports.getAllProjectsWithParam = catchAsync(async (req, res, next) => {
     sortBy: sortBy,
     sortOrder: sortOrder,
     search: search,
-    status: status ? status.split(",") : undefined,
+    priority: Number(priority) === -1 ? undefined : priority,
+    status:
+      status === "Chọn trạng thái"
+        ? undefined
+        : status
+        ? status.split(",")
+        : undefined,
     leader_id: leader_id,
     start_dateFrom: start_dateFrom,
     end_dateTo: end_dateTo,
@@ -83,5 +98,35 @@ exports.getAllProjectsWithParam = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     ...result,
+  });
+});
+
+exports.createOneProject = catchAsync(async (req, res, next) => {
+  const {
+    project_name,
+    description,
+    leader_id,
+    status,
+    start_date,
+    end_date,
+    priority,
+  } = req.body;
+
+  let file = req.file;
+
+  const data = await new ProjectService().createOneProject({
+    project_name,
+    description,
+    leader_id,
+    status,
+    start_date,
+    end_date,
+    file,
+    priority,
+  });
+
+  res.status(200).json({
+    status: "success",
+    data,
   });
 });

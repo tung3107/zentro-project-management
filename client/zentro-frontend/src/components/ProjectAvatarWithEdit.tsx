@@ -4,7 +4,7 @@ import { Camera } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Props {
-  name: string
+  name?: string | undefined
   coverUrl?: string | File | null
   onCoverChange?: (file: File) => void
   height?: number

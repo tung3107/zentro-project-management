@@ -3,7 +3,7 @@ import type { Project } from '../../../types/project'
 import Status from '../../../components/Status'
 import styled from 'styled-components'
 import Button from '../../../components/Button'
-import { Check } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, Flame, Minus } from 'lucide-react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { toast } from 'sonner'
@@ -20,6 +20,8 @@ import MemberListEdit from './MemberListEdit'
 import axios from 'axios'
 import { getMembersByProjectAPI, searchUserAPI, updateProjectMembersAPI } from '../service/user.service'
 import { getRoleForProjectAPI } from '../service/role.service'
+import Priority from '../../../components/Priority'
+import PrioritySelect from '../../../components/PrioritySelect'
 
 const StyledForm = styled.div`
   font-family: 'Inter', sans-serif;
@@ -58,6 +60,7 @@ const statuses = [
   { status: 'BỊ HỦY', color: '#E34850', bg: '#FDECEC', status_code: 'cancelled' },
   { status: 'HOÀN THÀNH', color: '#2D8A47', bg: '#E2F4E8', status_code: 'completed' }
 ]
+
 // Danh sách mock dùng cho MemberListEdit
 
 export default function EditProjectCom({
@@ -196,6 +199,13 @@ export default function EditProjectCom({
     })
   }
 
+  const handleInputChange = (field: string, value: number | string) => {
+    setFormData({
+      ...formData,
+      [field]: value
+    })
+  }
+
   return (
     <form
       style={{ color: '#1C272D' }}
@@ -215,8 +225,17 @@ export default function EditProjectCom({
         {/* Hàng đầu: tên + meta bên trái, Status bên phải */}
         <div className='flex justify-between items-center gap-4'>
           <div className='flex-1' style={{ fontFamily: "'Inter', sans-serif" }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 600, lineHeight: '150%' }}>{project.project_name}</h2>
-            <span style={{ fontSize: '14px', fontWeight: 400, lineHeight: '150%', color: '#717D84' }}>
+            <h2
+              className='inline-flex items-center gap-2'
+              style={{ fontSize: '20px', fontWeight: 600, lineHeight: '150%' }}
+            >
+              {project.project_name} <span style={{ margin: '0 10px', color: '#000000ff' }}>&middot;</span>{' '}
+              <Priority priority={project.priority} center className='text-sm! ' />
+            </h2>
+            <span
+              className='inline-flex'
+              style={{ fontSize: '14px', fontWeight: 400, lineHeight: '150%', color: '#717D84' }}
+            >
               Leader: {project.leader_name}
               {/* members[0]?.user?. */}
               <span style={{ margin: '0 10px', color: '#000000ff' }}>&middot;</span>
@@ -239,23 +258,16 @@ export default function EditProjectCom({
               {errors.project_name && <p className='text-sm text-red-500 mt-3 ml-[12px]'>{errors.project_name}</p>}
             </div>
           </FormGroup>
-          {/* <FormGroup>
-            <Label title='Leader'>Leader:</Label>
-            <div>
-              <Dropdown
-                placeholder='leader'
-                apiEndPoint='/users/leader'
-                name='leader_id'
-                value={formData.leader_id ?? 0}
-                onChange={handleSelectChange}
-                className='ml-[12px]'
-              />
-            </div>
-          </FormGroup> */}
           <FormGroup>
             <Label title='Mô tả'>Mô tả:</Label>
             <div>
-              <Input type='text' name='description' value={formData.description} onChange={handleChange} />
+              <textarea
+                className='w-[400px] h-[70px] px-3 text-sm py-2 border border-gray-300 rounded-md bg-white text-gray-900 ml-[12px]'
+                type='textarea'
+                name='description'
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+              />
               {errors.description && <p className='text-sm text-red-500 mt-3 ml-[12px]'>{errors.description}</p>}
             </div>
           </FormGroup>
@@ -294,6 +306,10 @@ export default function EditProjectCom({
                 </option>
               ))}
             </select>
+          </FormGroup>
+          <FormGroup>
+            <Label title='priority'>Độ ưu tiên:</Label>
+            <PrioritySelect value={formData.priority} onChange={(val) => setFormData({ ...formData, priority: val })} />
           </FormGroup>
           <FormGroup>
             <Label title='status'>Ngày bắt đầu:</Label>

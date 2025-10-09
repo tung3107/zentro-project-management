@@ -14,6 +14,7 @@ import User from './feature/admin/pages/User'
 import ResetPasswordFirstLogin from './feature/auth/pages/ResetPasswordFirstLogin'
 import Role from './feature/admin/pages/Role'
 import Dashboard from './feature/admin/pages/Dashboard'
+import ProjectViewModal from './feature/admin/pages/ProjectViewModal'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +63,14 @@ function App() {
                 element={
                   <Can resource='dashboard' action='read'>
                     <Project />
+                  </Can>
+                }
+              />
+              <Route
+                path='projects/:projectId'
+                element={
+                  <Can resource='dashboard' action='read'>
+                    <ProjectViewModal />
                   </Can>
                 }
               />
