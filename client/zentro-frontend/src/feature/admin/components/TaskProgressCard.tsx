@@ -2,17 +2,15 @@ import { Doughnut } from 'react-chartjs-2'
 import { Chart, ArcElement, Tooltip, Legend } from 'chart.js'
 import styled from 'styled-components'
 
-// Bắt buộc đăng ký phần tử cho chart.js
 Chart.register(ArcElement, Tooltip, Legend)
 
 const COLORS = [
   '#162964', // Đang thực hiện (navy)
   '#2574FF', // Đã xong
   '#A9C8FF', // Cần làm
-  '#7EB3FF' // Bị chặn
+  '#7EB3FF', // Bị chặn
+  '#FF6B6B' // Bị hủy
 ]
-
-const TASK_LABELS = ['Đang thực hiện', 'Đã xong', 'Cần làm', 'Bị chặn']
 
 export const ChartWrapper = styled.div`
   background: #fff;
@@ -94,26 +92,31 @@ const LegendItem = styled.div`
   font-weight: 400;
 `
 
-const ColorDot = styled.div`
+const ColorDot = styled.div<{ color: string }>`
   width: 27px;
   height: 27px;
   border-radius: 7px;
   background: ${(props) => props.color};
 `
 
-export default function TaskProgressCard({ TASK_DATA }: { TASK_DATA: Array<number> }) {
-  const TOTAL = TASK_DATA.reduce((a, b) => a + b, 0)
+type TaskDataType = {
+  status: string
+  value: number
+}
+
+export default function TaskProgressCard({ TASK_DATA }: { TASK_DATA: TaskDataType[] }) {
+  const TOTAL = TASK_DATA.reduce((a, b) => a + b.value, 0)
 
   const chartData = {
-    labels: TASK_LABELS,
+    labels: TASK_DATA.map((item) => item.status),
     datasets: [
       {
-        data: TASK_DATA,
+        data: TASK_DATA.map((item) => item.value),
         backgroundColor: COLORS,
         borderColor: '#fff',
         borderWidth: 4,
         hoverOffset: 6,
-        borderRadius: 8 // làm segment bo tròn
+        borderRadius: 8
       }
     ]
   }
@@ -140,11 +143,12 @@ export default function TaskProgressCard({ TASK_DATA }: { TASK_DATA: Array<numbe
           <DoughnutLabel>Tổng số task</DoughnutLabel>
         </DoughnutCenter>
       </DoughnutWrap>
+
       <LegendBox>
-        {TASK_LABELS.map((label, i) => (
-          <LegendItem key={label}>
-            <ColorDot color={COLORS[i]} />
-            {label}
+        {TASK_DATA.map((item, i) => (
+          <LegendItem key={item.status}>
+            <ColorDot color={COLORS[i % COLORS.length]} />
+            {item.status}
           </LegendItem>
         ))}
       </LegendBox>

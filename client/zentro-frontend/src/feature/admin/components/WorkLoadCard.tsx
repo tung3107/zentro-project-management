@@ -1,17 +1,20 @@
 import React, { useState } from 'react'
 import styled from 'styled-components'
 import { ChartWrapper, Header } from './TaskProgressCard'
+import Avatar from '../../../components/Avatar'
 
-interface PriorityData {
-  label: string
-  value: number
+interface WorkLoadData {
+  user_id: string
+  name: string
+  percent: number
+  avatar: string | null
 }
 
-interface PriorityCardProps {
-  data: PriorityData[]
+interface WorkLoadDataProps {
+  data: WorkLoadData[]
 }
 
-const PRIORITY_COLORS = ['#D10000', '#FF8C1A', '#0DA15F', '#2072FA']
+const PRIORITY_COLORS = ['#2072FA']
 
 const ProgressBarContainer = styled.div`
   display: flex;
@@ -21,14 +24,6 @@ const ProgressBarContainer = styled.div`
   min-height: 32px;
   border-bottom: 0.5px solid #c4c4c4;
 `
-const Dot = styled.div<{ color: string }>`
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: ${({ color }) => color};
-  margin-right: 12px;
-  flex-shrink: 0;
-`
 const Label = styled.div<{ color: string }>`
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
@@ -36,6 +31,7 @@ const Label = styled.div<{ color: string }>`
   width: 120px;
   font-size: 18px;
   display: flex;
+  gap: 10px;
   align-items: center;
 `
 const ProgressTrack = styled.div`
@@ -97,28 +93,28 @@ const BarTooltip = styled.div<{ show: boolean; percent: number }>`
   transition: opacity 0.2s;
 `
 
-export default function PriorityCard({ data }: PriorityCardProps) {
+export default function WorkLoadCard({ data }: WorkLoadDataProps) {
   const [hoverBarIndex, setHoverBarIndex] = useState<number | null>(null)
 
   return (
-    <ChartWrapper className='col-span-2 pt-[40px]! pb-[0px]!'>
+    <ChartWrapper className='col-span-2 pt-[40px]! pb-[0px]! col-span-2 row-start-4'>
       <Header>Phân bổ ưu tiên</Header>
       <div style={{ width: '100%' }}>
         {data.map((item, idx) => (
-          <ProgressBarContainer key={item.label}>
-            <Label color={PRIORITY_COLORS[idx]}>
-              <Dot color={PRIORITY_COLORS[idx]} />
-              {item.label}
+          <ProgressBarContainer key={item.name}>
+            <Label color={'#101828'}>
+              <Avatar name={item.name} avatarUrl={item.avatar} size={25} />
+              <span className='text-[16px]'>{item.name}</span>
             </Label>
             <ProgressTrack>
               <ProgressFillWrapper
                 onMouseEnter={() => setHoverBarIndex(idx)}
                 onMouseLeave={() => setHoverBarIndex(null)}
               >
-                <ProgressFill color={PRIORITY_COLORS[idx]} percent={item.value}>
-                  <ProgressPercent>{item.value}%</ProgressPercent>
-                  <BarTooltip show={hoverBarIndex === idx} percent={item.value}>
-                    {item.value}%
+                <ProgressFill color={'#2260FF'} percent={item.percent}>
+                  <ProgressPercent>{item.percent}%</ProgressPercent>
+                  <BarTooltip show={hoverBarIndex === idx} percent={item.percent}>
+                    {item.percent}%
                   </BarTooltip>
                 </ProgressFill>
               </ProgressFillWrapper>

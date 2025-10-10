@@ -4,6 +4,7 @@ import { X } from 'lucide-react'
 import { useState } from 'react'
 import type { Project } from '../../../types/project'
 import Dashboard from './Dashboard'
+import ProjectBadge from '../components/ProjectBadge'
 
 const Backdrop = styled.div`
   position: fixed;
@@ -102,7 +103,7 @@ export default function ProjectViewModal() {
     <Backdrop onClick={handleClose}>
       <ModalContainer onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
-          <h2 style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{project.project_name}</h2>
+          <ProjectBadge projectId={project.project_id} projectName={project.project_name} imageUrl={project.avatar} />
           <CloseButton onClick={handleClose}>
             <X size={24} />
           </CloseButton>
