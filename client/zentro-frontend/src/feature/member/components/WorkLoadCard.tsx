@@ -97,7 +97,7 @@ export default function WorkLoadCard({ data }: WorkLoadDataProps) {
   const [hoverBarIndex, setHoverBarIndex] = useState<number | null>(null)
 
   return (
-    <ChartWrapper className='col-span-2 pt-[40px]! pb-[0px]! col-span-2 row-start-4'>
+    <ChartWrapper className='pt-[40px]! pb-[0px]! col-span-3 row-start-3 col-start-3'>
       <Header>Phân bổ ưu tiên</Header>
       <div style={{ width: '100%' }}>
         {data.map((item, idx) => (

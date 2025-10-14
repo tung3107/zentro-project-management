@@ -1,10 +1,12 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import { X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Project } from '../../../types/project'
-import Dashboard from './Dashboard'
+import Dashboard from '../../member/pages/Dashboard'
 import ProjectBadge from '../components/ProjectBadge'
+import { getProjectAPI } from '../service/project.service'
+import { toast } from 'sonner'
 
 const Backdrop = styled.div`
   position: fixed;
@@ -18,10 +20,9 @@ const Backdrop = styled.div`
 
 const ModalContainer = styled.div`
   background: white;
-
   width: 95%;
   height: 90%;
-  padding: 0; /* bỏ padding ở đây, chuyển vào phần nội dung */
+  padding: 0;
   position: relative;
   overflow-y: overlay;
   border-radius: 16px;
@@ -40,12 +41,11 @@ const ModalContainer = styled.div`
   }
 `
 
-// 👇 Header cố định
 const ModalHeader = styled.div`
-  position: sticky; /* dính khi cuộn */
+  position: sticky;
   top: 0;
   background: white;
-  z-index: 10;
+  z-index: 90;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -69,48 +69,56 @@ const ModalContent = styled.div`
 
 export default function ProjectViewModal() {
   const navigate = useNavigate()
-  const { projectId } = useParams()
+  const { projectId } = useParams<{ projectId: string }>() // ✅ lấy param từ URL
 
-  const [project] = useState<Project>({
-    project_id: 'PRJ-246454',
-    project_name: 'E-commerce website',
-    description:
-      'Chúng mình là hihi, một góc nhỏ xinh giữa thế giới online — nơi bạn tìm thấy những món đồ hợp gu, hữu dụng và dễ thương cho mọi ngày. ',
-    start_date: '2025-10-08T06:00:55.000Z',
-    end_date: '2025-10-29T17:00:00.000Z',
-    status: 'ĐANG CHUẨN BỊ',
-    priority: 2,
-    avatar: null,
-    createdAt: '2025-10-08T06:00:55.000Z',
-    members: [
-      {
-        project_id: 'PRJ-246454',
-        user_id: '2025823165',
-        role_id: 7,
-        is_delete: false,
-        role: { role_name: 'Leader' },
-        user: { user_id: '2025823165', first_name: 'Tung', last_name: 'Duong' }
-      }
-    ],
-    leader_name: 'Tung Duong'
-  })
+  const [project, setProject] = useState<Project | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const handleClose = () => {
     navigate('/admin/projects')
   }
 
+  useEffect(() => {
+    async function fetchData() {
+      if (!projectId) return
+      try {
+        setLoading(true)
+        const res = await getProjectAPI(projectId)
+        if (res?.data) {
+          setProject(res.data)
+        } else {
+          toast.error('Không tìm thấy dự án!')
+        }
+      } catch (err) {
+        console.error(err)
+        toast.error('Không lấy được thông tin dự án!')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [projectId])
+
   return (
     <Backdrop onClick={handleClose}>
       <ModalContainer onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
-          <ProjectBadge projectId={project.project_id} projectName={project.project_name} imageUrl={project.avatar} />
+          {project && (
+            <ProjectBadge projectId={project.project_id} projectName={project.project_name} imageUrl={project.avatar} />
+          )}
           <CloseButton onClick={handleClose}>
             <X size={24} />
           </CloseButton>
         </ModalHeader>
 
         <ModalContent>
-          <Dashboard />
+          {loading ? (
+            <p className='text-gray-500 text-sm italic'>Đang tải dữ liệu...</p>
+          ) : project ? (
+            <Dashboard />
+          ) : (
+            <p className='text-gray-500 text-sm italic'>Không có dữ liệu để hiển thị.</p>
+          )}
         </ModalContent>
       </ModalContainer>
     </Backdrop>

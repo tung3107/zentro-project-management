@@ -3,11 +3,12 @@ const ProjectService = require("../services/project.service");
 
 exports.getOneProject = catchAsync(async (req, res, next) => {
   const { project_id } = req.params;
-  const data = await new ProjectService().getOneProject(project_id);
+  const { user_id } = req.user;
+  const data = await new ProjectService().getOneProject(user_id, project_id);
 
   res.status(200).json({
     status: "success",
-    ...data,
+    data,
   });
 });
 
@@ -56,6 +57,15 @@ exports.getProjectListByUser = catchAsync(async (req, res, next) => {
   const { user_id } = req.params;
 
   const data = await new ProjectService().getProjectListByUser(user_id);
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});
+
+exports.getProjectStats = catchAsync(async (req, res, next) => {
+  const data = await new ProjectService().getProjectStats();
 
   res.status(200).json({
     status: "success",

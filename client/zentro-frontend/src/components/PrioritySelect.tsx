@@ -84,6 +84,7 @@ const PrioritySelect: React.FC<PrioritySelectProps> = ({ value, onChange, classN
       onChange={handleChange}
       options={priorities}
       optionLabel='label'
+      optionValue='value'
       itemTemplate={itemTemplate}
       valueTemplate={valueTemplate}
       placeholder='Chọn độ ưu tiên'

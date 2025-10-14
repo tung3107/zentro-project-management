@@ -19,75 +19,78 @@ export default function ResetPasswordFirstLoginForm() {
   const { user } = useAuthStore()
   const { state } = useLocation() as { state: { email: string } }
   const email = state?.email
+  const navigate = useNavigate()
 
   const [formData, setFormData] = useState<FormDataType>({
     password: '',
     newPassword: '',
     confirmPassword: ''
   })
-  const [errors, setErrors] = useState<Partial<FormDataType>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
-  const navigate = useNavigate()
 
-  ///// VALIDATION
-  const validate = () => {
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,35}$/
+
+  /** ✅ Validate từng field riêng */
+  const validateField = (name: keyof FormDataType, value: string): string | undefined => {
+    switch (name) {
+      case 'password':
+        if (!value) return 'Mật khẩu là trường bắt buộc'
+        if (!passwordRegex.test(value))
+          return 'Mật khẩu phải dài 8-35 ký tự, có ít nhất 1 chữ hoa, thường, số và ký tự đặc biệt'
+        break
+
+      case 'newPassword':
+        if (!value) return 'Mật khẩu là trường bắt buộc'
+        if (!passwordRegex.test(value))
+          return 'Mật khẩu phải dài 8-35 ký tự, có ít nhất 1 chữ hoa, thường, số và ký tự đặc biệt'
+        if (formData.password && value === formData.password) return 'Mật khẩu mới không được giống mật khẩu cũ'
+        break
+
+      case 'confirmPassword':
+        if (!value) return 'Mật khẩu là trường bắt buộc'
+        if (value !== formData.newPassword) return 'Mật khẩu và xác nhận mật khẩu không khớp nhau'
+        break
+    }
+  }
+
+  const validateAll = (): boolean => {
     const newErrors: Partial<FormDataType> = {}
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,35}$/
-
-    if (!formData.password) newErrors.password = 'Mật khẩu là trường bắt buộc'
-    else if (!passwordRegex.test(formData.password))
-      newErrors.password = 'Mật khẩu phải dài 8-35 ký tự, có ít nhất 1 chữ hoa, thường, số và ký tự đặc biệt'
-
-    if (!formData.newPassword) newErrors.newPassword = 'Mật khẩu là trường bắt buộc'
-    else if (!passwordRegex.test(formData.newPassword))
-      newErrors.newPassword = 'Mật khẩu phải dài 8-35 ký tự, có ít nhất 1 chữ hoa, thường, số và ký tự đặc biệt'
-    else if (formData.password && formData.newPassword && formData.password === formData.newPassword)
-      newErrors.newPassword = 'Mật khẩu mới không được giống mật khẩu cũ'
-
-    if (!formData.confirmPassword) newErrors.confirmPassword = 'Mật khẩu là trường bắt buộc'
-    else if (!passwordRegex.test(formData.confirmPassword))
-      newErrors.confirmPassword = 'Mật khẩu phải dài 8-35 ký tự, có ít nhất 1 chữ hoa, thường, số và ký tự đặc biệt'
-    else if (formData.newPassword !== formData.confirmPassword)
-      newErrors.confirmPassword = 'Mật khẩu và xác nhận mật khẩu không khớp nhau'
-
+    ;(Object.keys(formData) as (keyof FormDataType)[]).forEach((field) => {
+      const msg = validateField(field, formData[field])
+      if (msg) newErrors[field] = msg
+    })
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  //// ON SUBMIT
-  const handleSubmit = async (e: React.ChangeEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
 
-    if (!validate() || isLoading) return
+    const msg = validateField(name as keyof FormDataType, value)
+    setErrors((prev) => ({ ...prev, [name]: msg ?? '' }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!validateAll() || isLoading) return
 
     try {
       setIsLoading(true)
       const res = await resetPasswordFirstLoginAPI(email, formData.password, formData.newPassword)
       toast.success(res.response.message)
 
-      console.log(user?.role?.role_name)
-
-      if (user?.role_name === 'Supper Admin') {
-        navigate('/admin/projects', { replace: true })
-      }
-      if (user?.role_name === 'User') {
-        navigate('/admin/', { replace: true })
-      }
+      const role = user?.role_name?.toLowerCase()
+      if (role?.includes('admin')) navigate('/admin', { replace: true })
+      else if (role?.includes('member')) navigate('/member', { replace: true })
+      else navigate('/', { replace: true })
     } catch (err) {
       const error = err as AxiosError<ApiErrorResponse>
       toast.error(error.response?.data.error.message ?? 'Lỗi khi thay đổi mật khẩu!')
     } finally {
       setIsLoading(false)
     }
-  }
-
-  /// ON CHANGE
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, checked, type } = e.target
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    })
   }
 
   return (
@@ -108,25 +111,22 @@ export default function ResetPasswordFirstLoginForm() {
         name='password'
         label='Mật khẩu cũ'
         onChange={handleChange}
-        onInput={validate}
         value={formData.password}
-        placeholder='Nhập mật khẩu cũ của bạn của bạn'
+        placeholder='Nhập mật khẩu cũ'
         errors={errors}
       />
       <Input
         name='newPassword'
         label='Mật khẩu mới'
         onChange={handleChange}
-        onInput={validate}
         value={formData.newPassword}
-        placeholder='Nhập mật khẩu mới của bạn của bạn'
+        placeholder='Nhập mật khẩu mới'
         errors={errors}
       />
       <Input
         name='confirmPassword'
         label='Xác nhận mật khẩu'
         onChange={handleChange}
-        onInput={validate}
         value={formData.confirmPassword}
         placeholder='Xác nhận lại mật khẩu'
         errors={errors}

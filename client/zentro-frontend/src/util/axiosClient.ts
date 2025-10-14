@@ -10,7 +10,8 @@ const axiosClient = axios.create({
 
 // Kiểu trả về là string | null
 axiosClient.interceptors.request.use((config) => {
-  const { accessToken } = useAuthStore.getState()
+  const { accessToken, setUnauthorized } = useAuthStore.getState()
+  setUnauthorized(false)
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
@@ -42,6 +43,12 @@ axiosClient.interceptors.response.use(
         logout()
         return Promise.reject(error)
       }
+    }
+
+    if (error.response?.status === 403) {
+      const { setUnauthorized } = useAuthStore.getState()
+
+      setUnauthorized(true)
     }
     return Promise.reject(error)
   }

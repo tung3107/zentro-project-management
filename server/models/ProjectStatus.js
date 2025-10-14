@@ -25,10 +25,6 @@ ProjectStatus.init(
     color: {
       type: DataTypes.STRING(20),
     },
-    position: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
     is_default: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,

@@ -19,6 +19,18 @@ exports.getMembersByProject = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getMembersByProject_fordropdown = catchAsync(async (req, res, next) => {
+  const { project_id } = req.params;
+  const data = await new MemberService().getMembersByProject_fordropdown(
+    project_id
+  );
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});
+
 exports.updateMemberOfProject = catchAsync(async (req, res, next) => {
   const { project_id, members } = req.body;
 

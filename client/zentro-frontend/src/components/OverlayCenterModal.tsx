@@ -16,6 +16,7 @@ interface ModalProps {
   title: string
   formable: boolean
   width?: string
+  height?: string
 }
 
 const Overlay = styled.div<{ isOpen: boolean }>`
@@ -34,7 +35,7 @@ const SlideIn = styled.div<{ isOpen: boolean }>`
   opacity: ${({ isOpen }) => (isOpen ? 1 : 0)};
   transition: all 0.4s ease-in-out;
   width: 500px;
-  max-width: 90%;
+  max-width: 95%;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
@@ -42,7 +43,7 @@ const SlideIn = styled.div<{ isOpen: boolean }>`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: 80vh;
+  max-height: 100vh;
 `
 
 const Header = styled.div`
@@ -116,7 +117,8 @@ export default function OverlayCenterModal({
   onSubmit,
   title,
   formable,
-  width
+  width,
+  height
 }: ModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -141,7 +143,7 @@ export default function OverlayCenterModal({
   return (
     <>
       <Overlay isOpen={isOpen} onClick={onClose} />
-      <SlideIn isOpen={isOpen} style={{ width: `${width}` }}>
+      <SlideIn isOpen={isOpen} style={{ width: `${width}`, height: `${height}` }}>
         <Header>
           <h2>{title}</h2>
           <CloseButton onClick={onClose}>

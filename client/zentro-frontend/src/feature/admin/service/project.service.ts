@@ -21,3 +21,13 @@ export const createProjectAPI = async (project: Project) => {
   const response = await api.post(`/projects`, project)
   return response.data
 }
+
+export const projectStatAPI = async () => {
+  const response = await api.get(`/projects/project-stats`)
+  return response.data
+}
+
+export const getProjectAPI = async (project_id: string) => {
+  const response = await api.get(`/projects/${project_id}`)
+  return response.data
+}

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import NotFoundPage from './components/NotFoundPage'
 import Loading from './components/Loading'
@@ -13,8 +13,12 @@ import AdminMainLayout from './feature/admin/components/AdminMainLayout'
 import User from './feature/admin/pages/User'
 import ResetPasswordFirstLogin from './feature/auth/pages/ResetPasswordFirstLogin'
 import Role from './feature/admin/pages/Role'
-import Dashboard from './feature/admin/pages/Dashboard'
+import Dashboard from './feature/member/pages/Dashboard'
 import ProjectViewModal from './feature/admin/pages/ProjectViewModal'
+import Test from './feature/auth/components/Test'
+import GuestRoute from './util/GuestRoute'
+import MemberMainLayout from './feature/member/components/MemberMainLayout'
+import ProjectView from './feature/member/pages/ProjectView'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,8 +39,22 @@ function App() {
       <BrowserRouter>
         <Suspense fallback={<Loading />}>
           <Routes>
-            <Route path='login' element={<Login />} />
-            <Route path='forgot-password' element={<ForgotPassword />} />
+            <Route
+              path='login'
+              element={
+                <GuestRoute>
+                  <Login />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path='forgot-password'
+              element={
+                <GuestRoute>
+                  <ForgotPassword />
+                </GuestRoute>
+              }
+            />
             <Route path='verify-otp' element={<VerifyOTP />} />
             <Route path='reset-password' element={<ResetPassword />} />
             <Route path='reset-success' element={<ResetSuccess />} />
@@ -58,6 +76,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
+              <Route index element={<Navigate to='users' replace />} />
               <Route
                 path='projects'
                 element={
@@ -67,7 +86,7 @@ function App() {
                 }
               />
               <Route
-                path='projects/:projectId'
+                path='projects/:projectId/*'
                 element={
                   <Can resource='dashboard' action='read'>
                     <ProjectViewModal />
@@ -84,6 +103,17 @@ function App() {
                   </Can>
                 }
               />
+            </Route>
+            <Route
+              path='member'
+              element={
+                <ProtectedRoute>
+                  <MemberMainLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path='users' element={<Test />} />
+              <Route path='projects/:projectId/*' element={<ProjectView />} />
             </Route>
 
             <Route path='*' element={<NotFoundPage />} />

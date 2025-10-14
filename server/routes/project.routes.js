@@ -7,10 +7,13 @@ const {
   deleteOneProject,
   getProjectListByUser,
   createOneProject,
+  getProjectStats,
 } = require("../controllers/project.controller");
 const upload = require("../middlewares/upload");
 
 const routes = express.Router();
+
+routes.route("/project-stats").get(protectRoute, getProjectStats);
 
 routes
   .route("/")
@@ -19,7 +22,7 @@ routes
 
 routes
   .route("/:project_id")
-  .get(protectRoute, authorize("project", "read"), getOneProject)
+  .get(protectRoute, getOneProject)
   .put(
     protectRoute,
     authorize("project", "update"),
@@ -31,5 +34,7 @@ routes
 routes
   .route("/get-project-by-user/:user_id")
   .get(protectRoute, getProjectListByUser);
+
+// authorize("project", "read"),
 
 module.exports = routes;

@@ -1,5 +1,8 @@
 const { Op, where, literal, fn, col } = require("sequelize");
 const Project = require("../models/Project");
+const StatusTemplate = require("../models/StatusTemplate");
+const ProjectStatus = require("../models/ProjectStatus");
+
 const ApiError = require("../utils/ApiError");
 const User = require("../models/User");
 const { getAllWithParams } = require("../utils/queryBuilder");
@@ -16,7 +19,7 @@ class ProjectService {
           {
             model: Member,
             as: "members",
-            where: { user_id },
+            where: { user_id, is_delete: 0 },
             attributes: ["role_id"], // lấy ra role_id của thành viên này trong dự án
             include: [
               {
@@ -56,14 +59,38 @@ class ProjectService {
       throw new ApiError(`Error: ${error.message}`, 400);
     }
   }
-  async getOneProject(project_id) {
+  async getOneProject(user_id, project_id) {
     try {
+      const isMember = await Member.findOne({
+        where: { user_id: user_id, project_id: project_id, is_delete: 0 },
+      });
+
+      const isAdmin = await User.findOne({
+        where: { user_id: user_id },
+        include: [
+          { model: Role, where: { role_name: { [Op.like]: "%Admin%" } } },
+        ],
+      });
+
+      if (!isMember && !isAdmin) {
+        throw new ApiError(
+          `Bạn không có quyền truy cập vào trang web này`,
+          403
+        );
+      }
+
       const data = await Project.findOne({
-        project_id: project_id,
+        where: {
+          project_id: project_id,
+        },
       });
       return data;
     } catch (err) {
-      throw new ApiError(`Error: ${err.message}`, 400);
+      if (err instanceof ApiError) {
+        throw err;
+      } else {
+        throw new ApiError(`Error: ${err.message}`, 500);
+      }
     }
   }
 
@@ -99,6 +126,17 @@ class ProjectService {
       const projectData = { ...body, avatar: avatar };
 
       const data = await Project.create(projectData);
+
+      const status_template = await StatusTemplate.findAll({
+        attributes: ["name", "color", "is_default"],
+        raw: true,
+      });
+
+      status_template.forEach((element) => {
+        element.project_id = data.project_id;
+      });
+
+      await ProjectStatus.bulkCreate(status_template);
 
       return data;
     } catch (err) {
@@ -173,6 +211,65 @@ class ProjectService {
       .filter((p) => !leader_id || p.leader_name);
 
     return result;
+  }
+
+  async getProjectStats() {
+    const data = [];
+
+    function percentage(countThisWeek, countLastWeek) {
+      const diff = countThisWeek - countLastWeek;
+      return countLastWeek === 0 ? 100 : (diff / countLastWeek) * 100;
+    }
+
+    const now = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(now.getDate() - 7);
+
+    const project_count = await Project.count();
+
+    const total_projects = await percentage(
+      project_count,
+      await Project.count({
+        where: {
+          createdAt: {
+            [Op.between]: [sevenDaysAgo, now],
+          },
+        },
+      })
+    );
+
+    const projects_in_progress_count = await Project.count({
+      where: {
+        status: "ĐANG DIỄN RA",
+      },
+    });
+
+    const projects_completed = await Project.count({
+      where: {
+        status: "HOÀN THÀNH",
+      },
+    });
+
+    data.push(
+      {
+        key: "total_projects",
+        label: "Số dự án",
+        value: project_count,
+        trend: `${total_projects > 0 ? "+" : "-"}${total_projects}%`,
+        trendColor: `${total_projects > 0 ? "green" : "red"}`,
+      },
+      {
+        key: "projects_in_progress",
+        label: "Đang diễn ra",
+        value: projects_in_progress_count,
+      },
+      {
+        key: "projects_completed",
+        label: "Hoàn thành",
+        value: projects_completed,
+      }
+    );
+    return data;
   }
 }
 

@@ -26,7 +26,15 @@ export const useLogin = () => {
 
       queryClient.setQueryData(['user'], user)
       toast.success('Đăng nhập thành công')
-      navigate('/dashboard', { replace: true })
+
+      const role = user?.role_name?.toLowerCase() || ''
+      if (role.includes('admin')) {
+        navigate('/admin', { replace: true })
+      } else if (role.includes('member')) {
+        navigate('/member', { replace: true })
+      } else {
+        navigate('/', { replace: true }) // fallback
+      }
     },
     onError: (err) => {
       const error = err as AxiosError<ApiErrorResponse>

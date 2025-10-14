@@ -5,7 +5,7 @@ class WorkFlow extends Model {}
 
 WorkFlow.init(
   {
-    workflow_id: {
+    transition_id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,

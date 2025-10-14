@@ -4,11 +4,16 @@ const {
   getMembersByProject,
   updateMemberOfProject,
   createMemberByProject,
+  getMembersByProject_fordropdown,
 } = require("../controllers/member.controller");
 
 const routes = express.Router();
 
 routes.route("/:project_id").get(protectRoute, getMembersByProject);
+
+routes
+  .route("/dropdown/:project_id")
+  .get(protectRoute, getMembersByProject_fordropdown);
 
 routes
   .route("/")

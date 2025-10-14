@@ -15,6 +15,8 @@ interface AuthState {
   accessToken: string | null
   refreshToken: string | null
   isAuthenticated: boolean
+  isUnauthorized: boolean
+  setUnauthorized: (v: boolean) => void
   permissions: Permission[]
   isPermLoading: boolean
   is_change_password: boolean
@@ -34,10 +36,12 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      isUnauthorized: false,
       isPermLoading: false,
       permissions: [],
       is_change_password: true,
 
+      setUnauthorized: (v) => set({ isUnauthorized: v }),
       setIsChangePassword: (b) => set({ is_change_password: b }),
 
       setPermLoading: (b) => set({ isPermLoading: b }),

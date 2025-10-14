@@ -128,7 +128,7 @@ export default function Project() {
       <div className='main-content-header'>
         <AdminNavigation />
 
-        <ProjectStats />
+        <ProjectStats reloadKey={reloadKey} />
 
         <ReusableTable<Project>
           key={reloadKey}

@@ -66,7 +66,7 @@ export default function UserProjectList({ userId }: { userId: string }) {
             </div>
             <button
               className='ml-auto flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded text-xs hover:bg-blue-100 transition'
-              onClick={() => navigate(`/project/${p.project_id}`)}
+              onClick={() => navigate(`/admin/projects/${p.project_id}`)}
               title='Xem chi tiết dự án'
             >
               <span>Xem chi tiết</span>

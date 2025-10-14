@@ -1,5 +1,14 @@
 const { Model, DataTypes } = require("sequelize");
 const { sequelize } = require("../config/database");
+const crypto = require("crypto");
+
+function generateTaskId() {
+  const array = new Uint32Array(1);
+  const time = Date.now().toString().slice(-3);
+  crypto.webcrypto.getRandomValues(array); // dùng webcrypto
+  const random3 = (array[0] % 1000).toString().padStart(3, "0");
+  return `${time}${random3}`;
+}
 
 class Task extends Model {}
 
@@ -7,7 +16,6 @@ Task.init(
   {
     task_id: {
       type: DataTypes.STRING(35),
-      autoIncrement: true,
       primaryKey: true,
     },
     project_id: {
@@ -48,26 +56,40 @@ Task.init(
         key: "user_id",
       },
     },
+    parent_id: {
+      type: DataTypes.STRING(35),
+    },
+
     title: { type: DataTypes.STRING(255), allowNull: false },
     description: { type: DataTypes.TEXT },
     priority: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      defaultValue: 0,
     },
     type: {
-      type: DataTypes.ENUM("TASK", "BUG", "STORY"),
-      defaultValue: "TASK",
+      type: DataTypes.ENUM("task", "bug", "story", "feature", "subtask"),
+      defaultValue: "task",
     },
-    estimate: { type: DataTypes.INTEGER }, // giờ ước lượng
-    progress: { type: DataTypes.INTEGER, defaultValue: 0 },
-    createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
-    updatedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+    estimate: { type: DataTypes.FLOAT }, // giờ ước lượng
+    spent_time: { type: DataTypes.FLOAT, defaultValue: null },
+    start_date: { type: DataTypes.DATE },
+    due_date: { type: DataTypes.DATE },
+    created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+    updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   },
   {
     sequelize,
-    modelName: "Sprint",
-    tableName: "sprint",
+    modelName: "Task",
+    tableName: "task",
     timestamps: false,
+    hooks: {
+      beforeCreate: async (task) => {
+        if (!task.task_id) {
+          task.task_id = generateTaskId();
+        }
+      },
+    },
   }
 );
 

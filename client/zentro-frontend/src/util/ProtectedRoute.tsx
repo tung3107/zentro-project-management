@@ -22,6 +22,18 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
     return children
   }
 
+  const role = user?.role_name?.toLowerCase() || ''
+
+  // 🔒 Member không được vào admin
+  if (role.includes('member') && location.pathname.startsWith('/admin')) {
+    return <Navigate to='/member' replace />
+  }
+
+  // 🔒 Admin không được vào member
+  if (role.includes('admin') && location.pathname.startsWith('/member')) {
+    return <Navigate to='/admin' replace />
+  }
+
   // 2️⃣ Đã xác thực & có token → cho vào
   if (isAuthenticated && accessToken) {
     return children

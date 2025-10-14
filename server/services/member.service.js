@@ -1,4 +1,4 @@
-const { Op } = require("sequelize");
+const { Op, fn, col } = require("sequelize");
 const { sequelize } = require("../config/database");
 const Member = require("../models/Member");
 const Project = require("../models/Project");
@@ -36,6 +36,33 @@ class MemberService {
           },
         ],
         attributes: [],
+      });
+
+      return data;
+    } catch (error) {
+      throw new ApiError(`Error: ${err.message}`, 400);
+    }
+  }
+
+  async getMembersByProject_fordropdown(project_id) {
+    try {
+      const data = await User.findAll({
+        include: [
+          {
+            model: Member,
+            as: "memberships",
+            where: { project_id: project_id },
+          },
+        ],
+        attributes: [
+          ["user_id", "id"],
+          [
+            fn("CONCAT", col("user.first_name"), " ", col("user.last_name")),
+            "name",
+          ],
+          "avatar",
+          "email",
+        ],
       });
 
       return data;

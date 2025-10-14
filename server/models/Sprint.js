@@ -34,8 +34,11 @@ Sprint.init(
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM("PLANNED", "ACTIVE", "CLOSED"),
-      defaultValue: "PLANNED",
+      type: DataTypes.ENUM("planned", "active", "closed"),
+      defaultValue: "planned",
+    },
+    velocity_estimate: {
+      type: DataTypes.FLOAT,
     },
   },
   {
