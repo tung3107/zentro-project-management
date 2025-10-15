@@ -18,7 +18,7 @@ const ApiError = require("./utils/ApiError");
 const app = express();
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.FRONT_END_BASE_URL,
     credentials: true, // nếu truyền cookie/token
   })
 );
