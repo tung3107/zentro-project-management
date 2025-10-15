@@ -20,3 +20,13 @@ export const searchBacklog = async (project_id: string, query: string) => {
   const response = await api.get(`/tasks/backlog/search/${project_id}?search=${query}`)
   return response.data
 }
+
+export const deleteTask = async (task_id: number) => {
+  const response = await api.delete(`/tasks/${task_id}`)
+  return response.data
+}
+
+export const getBoard = async (project_id: string) => {
+  const response = await api.get(`/tasks/${project_id}/sprints`)
+  return response.data
+}

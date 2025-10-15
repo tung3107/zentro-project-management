@@ -2,6 +2,8 @@ const { Op, fn, col } = require("sequelize");
 const Member = require("../models/Member");
 const Role = require("../models/Role");
 const Task = require("../models/Task");
+const ProjectStatus = require("../models/ProjectStatus");
+
 const Comment = require("../models/Comment");
 const Attachment = require("../models/Attachment");
 const TaskLabel = require("../models/TaskLabel");
@@ -223,9 +225,6 @@ class TaskService {
         );
       }
 
-      console.log("REQ QUERY search:", query);
-      console.log("LIKE pattern:", `%${query}%`);
-      //// Lay task backlog
       const backlog = await Task.findAll({
         where: { sprint_id: null, title: { [Op.like]: `%${query}%` } },
         order: [["created_at", "DESC"]],
@@ -316,6 +315,57 @@ class TaskService {
       }
 
       const data = await Task.create(body);
+
+      return data;
+    } catch (err) {
+      if (err instanceof ApiError) {
+        throw err;
+      } else {
+        throw new ApiError(`Error: ${err.message}`, 400);
+      }
+    }
+  }
+
+  async getTaskForBoard(user_id, project_id) {
+    try {
+      const isMember = await Member.findOne({
+        where: { user_id: user_id, project_id: project_id },
+      });
+
+      const isAdmin = await User.findOne({
+        where: { user_id: user_id },
+        include: [
+          { model: Role, where: { role_name: { [Op.like]: "%Admin%" } } },
+        ],
+      });
+
+      if (!isMember && !isAdmin) {
+        throw new ApiError(
+          `Bạn không có quyền truy cập vào trang web này`,
+          403
+        );
+      }
+      const data = await ProjectStatus.findAll({
+        where: { project_id: project_id },
+        attributes: [
+          ["status_id", "id"],
+          ["name", "title"],
+        ],
+        include: [
+          {
+            model: Task,
+            as: "tasks",
+            include: [
+              {
+                model: Sprint,
+                as: "sprint",
+                where: { status: "active" },
+                attributes: [],
+              },
+            ],
+          },
+        ],
+      });
 
       return data;
     } catch (err) {

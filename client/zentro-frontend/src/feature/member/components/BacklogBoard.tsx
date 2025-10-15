@@ -56,7 +56,9 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
 
   useEffect(() => {
     const delay = setTimeout(() => {
-      handleSearch(projectId, searchQuery)
+      if (searchQuery) {
+        handleSearch(projectId, searchQuery)
+      }
     }, 400)
     return () => clearTimeout(delay)
   }, [projectId, searchQuery])
@@ -329,7 +331,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                                   snapshot.isDragging ? 'bg-blue-50 shadow-md scale-[1.02]' : ''
                                 }`}
                               >
-                                <TaskCard task={task} isDragging={snapshot.isDragging} />
+                                <TaskCard task={task} isDragging={snapshot.isDragging} setReloadKey={setReloadKey} />
                               </div>
                             )}
                           </Draggable>
@@ -389,7 +391,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                               snapshot.isDragging ? 'bg-blue-50 shadow-lg scale-[1.02]' : ''
                             }`}
                           >
-                            <TaskCard task={task} isDragging={snapshot.isDragging} />
+                            <TaskCard task={task} isDragging={snapshot.isDragging} setReloadKey={setReloadKey} />
                           </div>
                         )}
                       </Draggable>

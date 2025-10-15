@@ -13,6 +13,18 @@ exports.getOneTask = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.deleteOneTask = catchAsync(async (req, res, next) => {
+  const { task_id } = req.params;
+  const user_id = req.user.user_id;
+
+  const data = await new TaskService().deleteOneTask(task_id, user_id);
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});
+
 exports.updateOneTask = catchAsync(async (req, res, next) => {
   const { task_id } = req.params;
   const user_id = req.user.user_id;
@@ -65,6 +77,19 @@ exports.getBackLog_TaskBySprint = catchAsync(async (req, res, next) => {
     user_id,
     project_id
   );
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});
+
+exports.getTaskForBoard = catchAsync(async (req, res, next) => {
+  const { project_id } = req.params;
+
+  const user_id = req.user.user_id;
+
+  const data = await new TaskService().getTaskForBoard(user_id, project_id);
 
   res.status(200).json({
     status: "success",

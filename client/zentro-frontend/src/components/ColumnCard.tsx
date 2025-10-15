@@ -2,16 +2,7 @@ import React from 'react'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { TaskItem } from './TaskItem'
 import { ColumnMenu } from './ColumnMenu'
-
-interface Task {
-  id: string
-  title: string
-}
-interface Column {
-  id: string
-  title: string
-  tasks: Task[]
-}
+import type { Column } from '../feature/member/components/DragnDropColumn'
 
 interface Props {
   col: Column
@@ -38,9 +29,9 @@ export const ColumnCard: React.FC<Props> = ({ col, colIndex, moveColumn, deleteC
       <div className='flex-1 overflow-y-auto p-4 space-y-3'>
         <Droppable droppableId={col.id}>
           {(provided) => (
-            <div ref={provided.innerRef} {...provided.droppableProps} className='min-h-[200px] flex flex-col gap-3'>
+            <div ref={provided.innerRef} {...provided.droppableProps} className='min-h-[160px] flex flex-col gap-3'>
               {col.tasks.map((task, index) => (
-                <Draggable key={task.id} draggableId={task.id} index={index}>
+                <Draggable key={task.task_id} draggableId={String(task.task_id)} index={index}>
                   {(dragProvided) => <TaskItem provided={dragProvided} title={task.title} />}
                 </Draggable>
               ))}

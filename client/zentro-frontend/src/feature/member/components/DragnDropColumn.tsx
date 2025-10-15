@@ -1,51 +1,47 @@
-import React, { useState } from 'react'
+import React, { type Dispatch, type SetStateAction } from 'react'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
 import { ColumnCard } from '../../../components/ColumnCard'
-interface Task {
-  id: string
-  title: string
-}
+import type { Task } from '../../../types/task'
+import { updateTaskAPI } from '../service/task.service'
+import { toast } from 'sonner'
 
-interface Column {
+export interface Column {
   id: string
   title: string
   tasks: Task[]
 }
 
-export default function DragnDropColumn() {
-  const [columns, setColumns] = useState<Column[]>([
-    {
-      id: 'inprogress',
-      title: 'In Progress',
-      tasks: [
-        { id: 't1', title: 'Component Library Documentation' },
-        { id: 't2', title: 'Performance Optimization' }
-      ]
-    },
-    {
-      id: 'inreview',
-      title: 'In Review',
-      tasks: [
-        { id: 't3', title: 'User Research Analysis' },
-        { id: 't4', title: 'User Research Analysis' },
-        { id: 't5', title: 'User Research Analysis' },
-        { id: 't6', title: 'User Research Analysis' },
-        { id: 't7', title: 'User Research Analysis' }
-      ]
-    }
-  ])
-
-  const onDragEnd = (result: DropResult) => {
+export default function DragnDropColumn({
+  columns,
+  setColumns
+}: {
+  columns: Column[]
+  setColumns: Dispatch<SetStateAction<Column[]>>
+}) {
+  const onDragEnd = async (result: DropResult) => {
     const { destination, source } = result
     if (!destination) return
     if (destination.droppableId === source.droppableId && destination.index === source.index) return
 
+    // ✅ clone data để tránh mutate state gốc
     const newCols = [...columns]
     const sourceCol = newCols.find((c) => c.id === source.droppableId)!
     const destCol = newCols.find((c) => c.id === destination.droppableId)!
-    const [moved] = sourceCol.tasks.splice(source.index, 1)
-    destCol.tasks.splice(destination.index, 0, moved)
+    const [movedTask] = sourceCol.tasks.splice(source.index, 1)
+    destCol.tasks.splice(destination.index, 0, movedTask)
     setColumns(newCols)
+
+    if (sourceCol.id !== destCol.id) {
+      try {
+        await updateTaskAPI({ ...movedTask, status_id: Number(destCol.id) })
+        toast.success('Cập nhật trạng thái thành công 🎉')
+      } catch (err) {
+        // ❌ nếu lỗi thì rollback (hoàn tác)
+        toast.error('Lỗi khi cập nhật trạng thái 😢')
+        const rollbackCols = [...columns]
+        setColumns(rollbackCols)
+      }
+    }
   }
 
   const moveColumn = (index: number, direction: 'left' | 'right') => {

@@ -1,5 +1,5 @@
 export interface Task {
-  task_id: string
+  task_id: number
   title: string
   description: string
   project_id?: string

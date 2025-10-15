@@ -6,14 +6,19 @@ const {
   createTask,
   updateOneTask,
   searchTaskBackLog,
+  deleteOneTask,
+  getTaskForBoard,
 } = require("../controllers/task.controller");
 
 const routes = express.Router();
 
+routes.route("/:project_id/sprints/").get(protectRoute, getTaskForBoard);
+
 routes
   .route("/:task_id")
   .get(protectRoute, getOneTask)
-  .put(protectRoute, updateOneTask);
+  .put(protectRoute, updateOneTask)
+  .delete(protectRoute, deleteOneTask);
 
 routes.route("/backlog/:project_id").get(protectRoute, getBackLog_TaskBySprint);
 
