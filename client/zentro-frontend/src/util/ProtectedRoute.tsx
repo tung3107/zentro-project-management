@@ -15,10 +15,22 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Loading />
   }
 
-  if (location.pathname !== '/reset-password-first-login' && is_change_password && isAuthenticated && accessToken)
+  if (
+    !isPermLoading &&
+    location.pathname !== '/reset-password-first-login' &&
+    is_change_password &&
+    isAuthenticated &&
+    accessToken
+  )
     return <Navigate to='/reset-password-first-login' replace state={{ email: user?.email }} />
 
-  if (location.pathname === '/reset-password-first-login' && is_change_password && isAuthenticated && accessToken) {
+  if (
+    !isPermLoading &&
+    location.pathname === '/reset-password-first-login' &&
+    is_change_password &&
+    isAuthenticated &&
+    accessToken
+  ) {
     return children
   }
 
