@@ -1,19 +1,12 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { TabPanel, TabView } from 'primereact/tabview'
 import styled from 'styled-components'
-import { CalendarClock, FileStackIcon, Globe, Kanban, KanbanSquareIcon } from 'lucide-react'
-import SummaryTab from '../components/SummaryTab'
-import BoardTab from '../components/BoardTab'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import BacklogTab from '../components/BacklogTab'
-
-const priorityColors = [
-  '#cb0404', // Highest
-  '#f37121', // High
-  '#d23232', // Medium
-  '#3498db', // Low
-  '#95a5a6' // Lowest
-]
+import { Calendar, CalendarClock, FileStackIcon, Globe, Kanban, Rows3Icon } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import SummaryTab from '../components/summary/SummaryTab'
+import BoardTab from '../components/board/BoardTab'
+import BacklogTab from '../components/board/BacklogTab'
+import CalendarTab from '../components/calendar/CalendarTab'
 
 const CssLayout = styled.div`
   .p-tabview .p-tabview-nav,
@@ -100,14 +93,15 @@ const CssLayout = styled.div`
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { projectId } = useParams<{ projectId: string }>()
   const location = useLocation()
 
   // ánh xạ route <-> tab index
   const tabs = [
-    { path: '', component: <SummaryTab />, label: 'Summary', icon: <Globe size={20} /> },
+    { path: '', component: <SummaryTab />, label: 'Tóm tắt', icon: <Globe size={20} /> },
     { path: 'board', component: <BoardTab />, label: 'Board', icon: <Kanban size={20} /> },
     { path: 'backlog', component: <BacklogTab />, label: 'Backlog', icon: <FileStackIcon size={20} /> },
+    { path: 'list', component: <BacklogTab />, label: 'List', icon: <Rows3Icon size={20} /> },
+    { path: 'calendar', component: <CalendarTab />, label: 'Lịch', icon: <Calendar size={20} /> },
     { path: 'timeline', component: <div>Timeline here</div>, label: 'Timeline', icon: <CalendarClock size={20} /> }
   ]
 

@@ -1,29 +1,29 @@
 import React, { useState, useEffect, type Dispatch, type SetStateAction } from 'react'
-import { useAuthStore } from '../../auth/stores/authStore'
-import type { Sprint } from '../../../types/sprint'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
-import type { ApiErrorResponse } from '../../auth/hooks/useAuth'
 import { Calendar } from 'primereact/calendar'
 import { Dropdown } from 'primereact/dropdown'
-import Button from '../../../components/Button'
-import { LoadingBlob } from '../../../components/LoadingBlob'
 import { Check } from 'lucide-react'
-import { createSprintAPI, getSprintAPI, updateSprintAPI } from '../service/sprint.service'
+import { useAuthStore } from '../../../auth/stores/authStore'
+import type { Sprint } from '../../../../types/sprint'
+import { createSprintAPI } from '../../service/sprint.service'
+import type { ApiErrorResponse } from '../../../auth/hooks/useAuth'
+import Button from '../../../../components/Button'
+import { LoadingBlob } from '../../../../components/LoadingBlob'
 
-export default function EditSprintCom({
+export default function AddSprintCom({
   setAddModalOpen,
   setAddModalContent,
   onSuccess,
-  sprintId
+  projectId
 }: {
   setAddModalOpen: Dispatch<SetStateAction<boolean>>
   setAddModalContent: Dispatch<SetStateAction<React.ReactNode | null>>
   onSuccess?: () => void
-  sprintId: number
+  projectId: string
 }) {
   const { user } = useAuthStore()
-  const [formData, setFormData] = useState<Sprint>({})
+  const [formData, setFormData] = useState<Sprint>({ project_id: projectId, status: 'planned' })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [duration, setDuration] = useState<number | 'custom' | null>(null)
@@ -36,14 +36,7 @@ export default function EditSprintCom({
     { label: 'Tùy chỉnh', value: 'custom' }
   ]
 
-  useEffect(() => {
-    async function fetchData() {
-      const data = await getSprintAPI(sprintId)
-      setFormData(data.data)
-    }
-    fetchData()
-  }, [sprintId])
-
+  // Tự động cập nhật end_date khi chọn duration cố định
   useEffect(() => {
     if (formData.start_date && duration && duration !== 'custom') {
       const start = new Date(formData.start_date)
@@ -84,10 +77,10 @@ export default function EditSprintCom({
     if (validate()) {
       try {
         setIsLoading(true)
-        await updateSprintAPI(formData)
+        await createSprintAPI(formData)
 
         onSuccess?.()
-        toast.success('Sửa sprint thành công!')
+        toast.success('Tạo sprint thành công!')
         setAddModalOpen(false)
         setAddModalContent(null)
       } catch (err) {
@@ -147,7 +140,7 @@ export default function EditSprintCom({
               Ngày bắt đầu <span className='text-red-500'>*</span>
             </label>
             <Calendar
-              value={new Date(formData.start_date)}
+              value={formData.start_date}
               onChange={(e) => setFormData({ ...formData, start_date: e.value })}
               dateFormat='dd-mm-yy'
               placeholder='Chọn ngày bắt đầu'
@@ -160,7 +153,7 @@ export default function EditSprintCom({
               Ngày kết thúc <span className='text-red-500'>*</span>
             </label>
             <Calendar
-              value={new Date(formData.end_date)}
+              value={formData.end_date}
               onChange={(e) => setFormData({ ...formData, end_date: e.value })}
               dateFormat='dd-mm-yy'
               placeholder='Chọn ngày kết thúc'

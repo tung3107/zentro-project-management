@@ -140,3 +140,14 @@ exports.createOneProject = catchAsync(async (req, res, next) => {
     data,
   });
 });
+
+exports.getProjectSummary = catchAsync(async (req, res, next) => {
+  const { project_id } = req.params;
+
+  const data = await new ProjectService().getProjectSummary(project_id);
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});

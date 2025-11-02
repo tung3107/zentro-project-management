@@ -1,9 +1,9 @@
 import React from 'react'
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown'
 import styled from 'styled-components'
-import { Flame, ArrowUp, Minus, ArrowDown, BoxSelect } from 'lucide-react'
+import { Flame, ArrowUp, Minus, ArrowDown, X } from 'lucide-react'
 
-type PriorityOption = {
+export type PriorityOption = {
   value: number
   label: string
   color: string
@@ -11,7 +11,6 @@ type PriorityOption = {
 }
 
 const priorities: PriorityOption[] = [
-  { value: -1, label: 'Chọn độ ưu tiên', color: '#000000ff', icon: <BoxSelect size={14} color='#ef4444' /> },
   { value: 3, label: 'Cần gấp', color: '#ef4444', icon: <Flame size={14} color='#ef4444' /> },
   { value: 2, label: 'Cao', color: '#fa7115ff', icon: <ArrowUp size={14} color='#fa7115ff' /> },
   { value: 1, label: 'Trung bình', color: '#facc15', icon: <Minus size={14} color='#facc15' /> },
@@ -22,6 +21,7 @@ interface PrioritySelectProps {
   value: number
   onChange: (value: number) => void
   className?: string
+  showClear?: boolean
 }
 
 const StyledDropdown = styled(Dropdown)`
@@ -42,10 +42,6 @@ const StyledDropdown = styled(Dropdown)`
     gap: 6px;
   }
 
-  .p-dropdown-trigger {
-    width: 28px;
-  }
-
   &:hover {
     border-color: #999 !important;
   }
@@ -56,11 +52,11 @@ const StyledDropdown = styled(Dropdown)`
   }
 `
 
-const PrioritySelect: React.FC<PrioritySelectProps> = ({ value, onChange, className }) => {
+const PrioritySelect: React.FC<PrioritySelectProps> = ({ value, onChange, className, showClear = true }) => {
   const itemTemplate = (option: PriorityOption) => (
     <div className='flex items-center gap-2' style={{ color: option.color }}>
       {option.icon}
-      <span>{option.label}</span>
+      <span className='font-bold'>{option.label}</span>
     </div>
   )
 
@@ -68,7 +64,7 @@ const PrioritySelect: React.FC<PrioritySelectProps> = ({ value, onChange, classN
     option ? (
       <div className='flex items-center gap-2' style={{ color: option.color }}>
         {option.icon}
-        <span>{option.label}</span>
+        <span className='font-bold'>{option.label}</span>
       </div>
     ) : (
       <span style={{ color: '#999' }}>Chọn độ ưu tiên</span>
@@ -88,7 +84,8 @@ const PrioritySelect: React.FC<PrioritySelectProps> = ({ value, onChange, classN
       itemTemplate={itemTemplate}
       valueTemplate={valueTemplate}
       placeholder='Chọn độ ưu tiên'
-      className={`w-[160px] ${className}`}
+      className={`w-[200px] ${className}`}
+      showClear={showClear}
     />
   )
 }

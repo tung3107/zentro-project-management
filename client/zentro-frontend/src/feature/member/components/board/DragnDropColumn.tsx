@@ -1,9 +1,9 @@
 import React, { type Dispatch, type SetStateAction } from 'react'
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd'
-import { ColumnCard } from '../../../components/ColumnCard'
-import type { Task } from '../../../types/task'
-import { updateTaskAPI } from '../service/task.service'
 import { toast } from 'sonner'
+import type { Task } from '../../../../types/task'
+import { updateTaskAPI } from '../../service/task.service'
+import { ColumnCard } from '../../../../components/ColumnCard'
 
 export interface Column {
   id: string
@@ -13,10 +13,14 @@ export interface Column {
 
 export default function DragnDropColumn({
   columns,
-  setColumns
+  setColumns,
+  onTaskClick,
+  onAddTask
 }: {
   columns: Column[]
   setColumns: Dispatch<SetStateAction<Column[]>>
+  onTaskClick?: (task: Task) => void
+  onAddTask?: (statusId: number) => void
 }) {
   const onDragEnd = async (result: DropResult) => {
     const { destination, source } = result
@@ -59,7 +63,15 @@ export default function DragnDropColumn({
     <div className='flex gap-4 overflow-x-auto items-stretch'>
       <DragDropContext onDragEnd={onDragEnd}>
         {columns.map((col, i) => (
-          <ColumnCard key={col.id} col={col} colIndex={i} moveColumn={moveColumn} deleteColumn={deleteColumn} />
+          <ColumnCard
+            key={col.id}
+            col={col}
+            colIndex={i}
+            moveColumn={moveColumn}
+            deleteColumn={deleteColumn}
+            onTaskClick={onTaskClick}
+            onAddTask={onAddTask}
+          />
         ))}
       </DragDropContext>
     </div>

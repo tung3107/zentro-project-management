@@ -1,26 +1,27 @@
 import React, { useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
-import type { Task } from '../../../types/task'
-import Avatar from '../../../components/Avatar'
 import { CheckSquare, Calendar, AlertTriangle, MoreHorizontal } from 'lucide-react'
-import { type } from '../../../types/type'
-import Priority from '../../../components/Priority'
-import StatusLabel from '../../../components/StatusLabel'
 import { useParams } from 'react-router-dom'
 import { Tooltip } from 'primereact/tooltip'
 import { Menu } from 'primereact/menu'
-import OverlayCenterModal from '../../../components/OverlayCenterModal'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
-import type { ApiErrorResponse } from '../../auth/hooks/useAuth'
-import { deleteTask } from '../service/task.service'
+import type { Task } from '../../../../types/task'
+import { type } from '../../../../types/type'
+import { deleteTask } from '../../service/task.service'
+import type { ApiErrorResponse } from '../../../auth/hooks/useAuth'
+import StatusLabel from '../../../../components/StatusLabel'
+import Priority from '../../../../components/Priority'
+import Avatar from '../../../../components/Avatar'
+import OverlayCenterModal from '../../../../components/OverlayCenterModal'
 
 export interface TaskCardProps {
   task: Task
   isDragging?: boolean
   setReloadKey: Dispatch<SetStateAction<number>>
+  onTaskClick?: (task: Task) => void
 }
 
-export default function TaskCard({ task, isDragging = false, setReloadKey }: TaskCardProps) {
+export default function TaskCard({ task, isDragging = false, setReloadKey, onTaskClick }: TaskCardProps) {
   const { projectId } = useParams()
   const menuRef = useRef<any>(null)
 
@@ -74,22 +75,27 @@ export default function TaskCard({ task, isDragging = false, setReloadKey }: Tas
 
   return (
     <div
-      className={`w-full border border-gray-200 rounded-md px-4 py-2 bg-white hover:shadow-sm transition-all duration-150 cursor-pointer flex gap-2 items-center justify-between ${
+      className={`w-full border border-gray-200 rounded-md px-4 py-2 bg-white hover:shadow-sm transition-all duration-150 cursor-pointer ${
         isDragging ? 'bg-blue-50 shadow-md scale-[1.01]' : ''
       }`}
+      onClick={() => onTaskClick?.(task)}
     >
-      {/* Left: Type + Title */}
-      <div className='flex items-center gap-2 min-w-0 flex-1'>
-        {getTypeIcon()}
-        <span className='font-medium text-gray-800 truncate'>{task.title}</span>
-      </div>
+      <div className='grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto_auto] items-center gap-3'>
+        {/* Type Icon */}
+        <div className='flex items-center justify-center'>{getTypeIcon()}</div>
 
-      {/* Middle: Status + Due date + Estimate */}
-      <div className='flex items-center gap-3 text-sm text-gray-600 mx-6'>
-        <StatusLabel value={task.status_id} apiEndPoint={`/status/${projectId}`} />
-        {task.due_date && (
+        {/* Title */}
+        <span className='font-medium text-gray-800 truncate min-w-0'>{task.title}</span>
+
+        {/* Status */}
+        <div className='flex items-center justify-center'>
+          <StatusLabel value={task.status_id} apiEndPoint={`/status/${projectId}`} />
+        </div>
+
+        {/* Due Date */}
+        {task.due_date ? (
           <div
-            className={`flex items-center gap-1 px-2 py-[2px] rounded-md text-sm ${
+            className={`flex items-center gap-1 px-2 py-[2px] rounded-md text-sm whitespace-nowrap ${
               new Date(task.due_date).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
                 ? 'border border-red-300 text-red-600 bg-red-50'
                 : 'text-gray-700'
@@ -102,32 +108,50 @@ export default function TaskCard({ task, isDragging = false, setReloadKey }: Tas
             )}
             <span>{new Date(task.due_date).toLocaleDateString('vi-VN')}</span>
           </div>
+        ) : (
+          <div></div>
         )}
-        {task.estimate && (
-          <div className='flex items-center gap-1'>
+
+        {/* Estimate */}
+        {task.estimate ? (
+          <div className='flex items-center gap-1 text-sm text-gray-600 whitespace-nowrap'>
             <span>{task.estimate}h</span>
           </div>
+        ) : (
+          <div></div>
         )}
-      </div>
 
-      <div className='flex flex-row gap-2'>
-        {/* Right: Priority + Assignee */}
-        <div className='flex items-center gap-4'>
-          <Tooltip target='.assignee_avatar' />
+        {/* Priority */}
+        <div className='flex items-center justify-center'>
           <Priority priority={task.priority} center />
+        </div>
+
+        {/* Assignee */}
+        <div className='flex items-center justify-center'>
+          <Tooltip target='.assignee_avatar' />
           <div
-            className='assignee_avatar flex items-center gap-2 ml-[20px]'
+            className='assignee_avatar flex items-center'
             data-pr-tooltip={`${task.assignee?.assignee_name} (${task.assignee?.email})`}
             data-pr-position='bottom'
           >
             <Avatar avatarUrl={task.assignee?.avatar} name={task.assignee?.assignee_name} size={30} />
           </div>
         </div>
+
+        {/* Menu Button */}
+        <div className='flex items-center justify-center'>
+          <Menu model={items} popup ref={menuRef} />
+          <button
+            className='cursor-pointer text-black hover:text-gray-700 transition-colors'
+            onClick={(e) => {
+              e.stopPropagation()
+              menuRef.current.toggle(e)
+            }}
+          >
+            <MoreHorizontal size={20} />
+          </button>
+        </div>
       </div>
-      <Menu model={items} popup ref={menuRef} />
-      <button className='cursor-pointer text-black' onClick={(e) => menuRef.current.toggle(e)}>
-        <MoreHorizontal size={20} />
-      </button>
 
       <OverlayCenterModal
         isOpen={deleteModalOpen}

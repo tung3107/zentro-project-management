@@ -271,6 +271,147 @@ class ProjectService {
     );
     return data;
   }
+
+  /**
+   * Get project summary statistics
+   * @param {string} project_id - Project ID
+   * @returns {object} Summary data with task counts, priority breakdown, and workload
+   */
+  async getProjectSummary(project_id) {
+    try {
+      const Task = require("../models/Task");
+
+      // Check if project exists
+      const project = await Project.findByPk(project_id);
+      if (!project) {
+        throw new ApiError("Không tìm thấy dự án", 404);
+      }
+
+      // Get all tasks for this project
+      const tasks = await Task.findAll({
+        where: { project_id },
+        include: [
+          {
+            model: ProjectStatus,
+            as: "status",
+            attributes: ["name", "color"],
+          },
+          {
+            model: User,
+            as: "assignee",
+            attributes: ["user_id", "first_name", "last_name", "avatar"],
+          },
+        ],
+      });
+
+      // Calculate summary statistics
+      const totalTasks = tasks.length;
+      const now = new Date();
+
+      // Count tasks by status name
+      const statusCounts = {};
+      tasks.forEach((task) => {
+        const statusName = task.status?.name || "Không xác định";
+        statusCounts[statusName] = (statusCounts[statusName] || 0) + 1;
+      });
+
+      // Task data for chart (by status)
+      const taskData = Object.entries(statusCounts).map(([status, count]) => ({
+        status,
+        value: count,
+      }));
+
+      // Count by priority (0: Lowest, 1: Low, 2: Medium, 3: High, 4: Highest)
+      const priorityLabels = ["Thấp", "Trung bình", "Cao", "Cần gấp"];
+      const priorityCounts = [0, 0, 0, 0];
+      tasks.forEach((task) => {
+        const priority = task.priority || 0;
+        if (priority >= 0 && priority <= 4) {
+          priorityCounts[priority]++;
+        }
+      });
+
+      const priorityData = priorityLabels
+        .map((label, index) => ({
+          label,
+          value: priorityCounts[index],
+        }))
+        .filter((item) => item.value > 0); // Only include priorities with tasks
+
+      // Calculate workload by assignee
+      const assigneeWorkload = {};
+      tasks.forEach((task) => {
+        if (task.assignee_id) {
+          if (!assigneeWorkload[task.assignee_id]) {
+            assigneeWorkload[task.assignee_id] = {
+              user_id: task.assignee_id,
+              name: task.assignee
+                ? `${task.assignee.first_name} ${task.assignee.last_name}`
+                : "Unknown",
+              avatar: task.assignee?.avatar || null,
+              count: 0,
+            };
+          }
+          assigneeWorkload[task.assignee_id].count++;
+        }
+      });
+
+      // Convert to workload percentage
+      const workLoad = Object.values(assigneeWorkload).map((assignee) => ({
+        user_id: assignee.user_id,
+        name: assignee.name,
+        avatar: assignee.avatar,
+        percent:
+          totalTasks > 0 ? Math.round((assignee.count / totalTasks) * 100) : 0,
+      }));
+
+      // Calculate specific status counts (you may need to adjust status names)
+      const completedTasks = tasks.filter(
+        (t) =>
+          t.status?.name?.toLowerCase().includes("hoàn thành") ||
+          t.status?.name?.toLowerCase().includes("done")
+      ).length;
+
+      const inProgressTasks = tasks.filter(
+        (t) =>
+          t.status?.name?.toLowerCase().includes("đang") ||
+          t.status?.name?.toLowerCase().includes("progress")
+      ).length;
+
+      const blockedTasks = tasks.filter(
+        (t) =>
+          t.status?.name?.toLowerCase().includes("chặn") ||
+          t.status?.name?.toLowerCase().includes("blocked")
+      ).length;
+
+      // Count overdue tasks
+      const dueTasks = tasks.filter(
+        (t) =>
+          t.due_date &&
+          new Date(t.due_date) < now &&
+          !t.status?.name?.toLowerCase().includes("hoàn thành")
+      ).length;
+
+      return {
+        summary: {
+          totalTasks,
+          completedTasks,
+          inProgressTasks,
+          blockedTasks,
+          dueTasks,
+        },
+        taskData,
+        priorityData,
+        workLoad,
+      };
+    } catch (error) {
+      console.error("getProjectSummary error:", error);
+      throw new ApiError(
+        error.message || "Không thể lấy thông tin tóm tắt dự án",
+        error.statusCode || 500
+      );
+    }
+  }
 }
 
 module.exports = ProjectService;

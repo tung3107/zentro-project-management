@@ -43,8 +43,6 @@ routes
   .route("/leader")
   .get(protectRoute, authorize("user", "read"), getAllUser);
 
-routes
-  .route("/search")
-  .get(protectRoute, authorize("user", "read"), searchUserForProject);
+routes.route("/search").get(protectRoute, searchUserForProject);
 
 module.exports = routes;

@@ -23,6 +23,17 @@ exports.getOneSprint = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getAllSprints = catchAsync(async (req, res, next) => {
+  const { project_id } = req.params;
+
+  const data = await new SprintService().getAllSprints(project_id);
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});
+
 exports.createSprint_planned_status = catchAsync(async (req, res, next) => {
   const { project_id, name, goal, start_date, end_date } = req.body;
 
@@ -42,13 +53,14 @@ exports.createSprint_planned_status = catchAsync(async (req, res, next) => {
 
 exports.startSprint = catchAsync(async (req, res, next) => {
   const { sprint_id } = req.params;
-  const { name, goal, start_date, end_date } = req.body;
+  const { name, goal, start_date, end_date, project_id } = req.body;
 
   const data = await new SprintService().startSprint(sprint_id, {
     name,
     goal,
     start_date,
     end_date,
+    project_id,
   });
 
   res.status(200).json({

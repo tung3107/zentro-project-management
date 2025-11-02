@@ -25,3 +25,13 @@ export const getCurrentSprintDetails = async (project_id: string) => {
   const response = await api.get(`/sprints/current-sprint/${project_id}`)
   return response.data
 }
+
+export const getAllSprintsAPI = async (project_id: string) => {
+  const response = await api.get(`/sprints/project/${project_id}`)
+  return response.data
+}
+
+export const startsprintAPI = async (sprint: Sprint) => {
+  const response = await api.post(`/sprints/start-sprint/${sprint.sprint_id}`, sprint)
+  return response.data
+}

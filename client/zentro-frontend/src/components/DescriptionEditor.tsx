@@ -1,31 +1,58 @@
-import React from 'react'
-import '@uiw/react-md-editor/markdown-editor.css'
-import '@uiw/react-markdown-preview/markdown.css'
-import MDEditor from '@uiw/react-md-editor'
+import React, { useRef, useState } from 'react'
+import JoditEditor from 'jodit-react'
 
 interface DescriptionEditorProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
   className?: string
+  height?: number
 }
 
 export default function DescriptionEditor({
   value,
   onChange,
   placeholder = 'Nhập mô tả...',
-  className = ''
+  className = '',
+  height = 300
 }: DescriptionEditorProps) {
+  const editor = useRef<JoditEditor | null>(null)
+
   return (
     <div className={`w-full ${className}`} data-color-mode='light'>
-      <MDEditor
+      <JoditEditor
+        ref={editor}
         value={value}
-        onChange={(val) => onChange(val || '')}
-        preview='edit'
-        height={300}
-        textareaProps={{
-          placeholder
+        config={{
+          readonly: false, // true = chỉ xem, không gõ được
+          height: height,
+          placeholder: placeholder,
+          toolbarAdaptive: false,
+          askBeforePasteFromWord: false,
+          askBeforePasteHTML: false,
+          toolbarSticky: false,
+          buttons: [
+            'bold',
+            'italic',
+            'underline',
+            '|',
+            'ul',
+            'ol',
+            '|',
+            'indent',
+            'outdent',
+            '|',
+            'fontsize',
+            'table',
+            '|',
+            'link',
+            'image',
+            'video',
+            '|',
+            'source'
+          ]
         }}
+        onBlur={(val) => onChange(val || '')}
       />
     </div>
   )

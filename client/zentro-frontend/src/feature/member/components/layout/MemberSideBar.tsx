@@ -1,13 +1,20 @@
-import { MenuIcon, SettingsIcon, SquareArrowRight, XIcon } from 'lucide-react'
+import {
+  MenuIcon,
+  MessageCircleMore,
+  MessageCircleQuestionIcon,
+  SettingsIcon,
+  SquareArrowRight,
+  XIcon
+} from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import Logo from '../../../components/Logo'
-import Avatar from '../../../components/Avatar'
-import { useAuthStore } from '../../auth/stores/authStore'
 import { NavLink, useNavigate } from 'react-router-dom'
-import OverlayCenterModal from '../../../components/OverlayCenterModal'
-import type { Project } from '../../../types/project'
-import { userProjectAPI } from '../../admin/service/project.service'
+import { useAuthStore } from '../../../auth/stores/authStore'
+import Avatar from '../../../../components/Avatar'
+import type { Project } from '../../../../types/project'
+import { userProjectAPI } from '../../../admin/service/project.service'
+import Logo from '../../../../components/Logo'
+import OverlayCenterModal from '../../../../components/OverlayCenterModal'
 
 const UserMenu = ({ menuRef, logout }: { menuRef: React.RefObject<HTMLDivElement>; logout: () => void }) => {
   return (
@@ -230,6 +237,21 @@ export default function MemberSideBar({
 
         <div className='my-4 h-px bg-gray-200'></div>
 
+        <SidebarItem
+          icon={<MessageCircleMore />}
+          text='Tin nhắn'
+          isCollapsed={isCollapsed}
+          isActive={false}
+          onClick={() => {
+            navigate(`/member/chat`)
+          }}
+        />
+        <SidebarItem
+          icon={<MessageCircleQuestionIcon />}
+          text='AI Chatbot'
+          isCollapsed={isCollapsed}
+          isActive={false}
+        />
         <SidebarItem icon={<SettingsIcon />} text='Settings' isCollapsed={isCollapsed} isActive={false} />
       </div>
 

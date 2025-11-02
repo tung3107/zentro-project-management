@@ -8,11 +8,22 @@ const {
   searchTaskBackLog,
   deleteOneTask,
   getTaskForBoard,
+  searchTaskForBoard,
+  getBurndownChart,
+  getTasksByMonth,
 } = require("../controllers/task.controller");
 
 const routes = express.Router();
 
 routes.route("/:project_id/sprints/").get(protectRoute, getTaskForBoard);
+
+routes
+  .route("/:project_id/sprints/search")
+  .get(protectRoute, searchTaskForBoard);
+
+routes.route("/:project_id/burndown").get(protectRoute, getBurndownChart);
+
+routes.route("/:project_id/calendar").get(protectRoute, getTasksByMonth);
 
 routes
   .route("/:task_id")

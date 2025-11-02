@@ -11,6 +11,7 @@ const memberRoutes = require("./routes/member.routes");
 const sprintRoutes = require("./routes/sprint.routes");
 const taskRoutes = require("./routes/task.routes");
 const statusRoutes = require("./routes/status.routes");
+const chatRoutes = require("./routes/chat.routes");
 
 const globalErrorHandler = require("./middlewares/errorHandle");
 const ApiError = require("./utils/ApiError");
@@ -18,7 +19,7 @@ const ApiError = require("./utils/ApiError");
 const app = express();
 app.use(
   cors({
-    origin: process.env.FRONT_END_BASE_URL,
+    origin: "http://localhost:3000",
     credentials: true, // nếu truyền cookie/token
   })
 );
@@ -40,6 +41,7 @@ app.use("/api/v1/members", memberRoutes);
 app.use("/api/v1/sprints", sprintRoutes);
 app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/status", statusRoutes);
+app.use("/api/v1/chats", chatRoutes);
 
 app.use((req, res, next) => {
   next(new ApiError("Không tìm thấy route", 404));

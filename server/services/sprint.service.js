@@ -17,10 +17,10 @@ class SprintService {
 
       return activeSprint;
     } catch (error) {
-      if (err instanceof ApiError) {
-        throw err;
+      if (error instanceof ApiError) {
+        throw error;
       } else {
-        throw new ApiError(`Error: ${err.message}`, 400);
+        throw new ApiError(`Error: ${error.message}`, 400);
       }
     }
   }
@@ -36,11 +36,34 @@ class SprintService {
 
       return activeSprint;
     } catch (error) {
-      if (err instanceof ApiError) {
-        throw err;
+      if (error instanceof ApiError) {
+        throw error;
       } else {
         throw new ApiError(`Error: ${err.message}`, 400);
       }
+    }
+  }
+
+  async getAllSprints(project_id) {
+    try {
+      const sprints = await Sprint.findAll({
+        where: { project_id: project_id },
+        order: [["start_date", "DESC"]],
+        attributes: [
+          "sprint_id",
+          "project_id",
+          "name",
+          "goal",
+          "start_date",
+          "end_date",
+          "status",
+          "velocity_estimate",
+        ],
+      });
+
+      return sprints;
+    } catch (error) {
+      throw new ApiError(`Error: ${error.message}`, 400);
     }
   }
 
@@ -60,15 +83,42 @@ class SprintService {
 
       return data;
     } catch (error) {
-      if (err instanceof ApiError) {
-        throw err;
+      if (error instanceof ApiError) {
+        throw error;
       } else {
-        throw new ApiError(`Error: ${err.message}`, 400);
+        throw new ApiError(`Error: ${error.message}`, 400);
       }
     }
   }
 
   async startSprint(sprint_id, body) {
+    try {
+      const result = await Sprint.findByPk(sprint_id);
+
+      if (!result) throw new ApiError("Sprint kkhông tồn tại", 400);
+
+      const isActiveSprintExist = await Sprint.findOne({
+        where: { project_id: body.project_id, sprint_id },
+      });
+
+      if (isActiveSprintExist)
+        throw new ApiError("Chỉ được bắt đầu 1 sprint trong 1 thời điểm", 400);
+
+      const data = { ...body, status: "active" };
+
+      await Sprint.update(data, { where: { sprint_id: sprint_id } });
+
+      return "Start sprint thành công";
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      } else {
+        throw new ApiError(`Error: ${error.message}`, 400);
+      }
+    }
+  }
+
+  async completeSprint(sprint_id, body) {
     try {
       const result = await Sprint.findByPk(sprint_id);
 
@@ -80,10 +130,10 @@ class SprintService {
 
       return "Start sprint thành công";
     } catch (error) {
-      if (err instanceof ApiError) {
-        throw err;
+      if (error instanceof ApiError) {
+        throw error;
       } else {
-        throw new ApiError(`Error: ${err.message}`, 400);
+        throw new ApiError(`Error: ${error.message}`, 400);
       }
     }
   }

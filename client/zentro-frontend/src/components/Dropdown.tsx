@@ -6,13 +6,7 @@ import type { ApiErrorResponse } from '../feature/auth/hooks/useAuth'
 import { toast } from 'sonner'
 import Avatar from './Avatar'
 
-type RoleOption = {
-  id: string
-  name: string
-  color?: string
-  avatar?: string
-  email?: string
-}
+type RoleOption = Record<string, any>
 
 interface ApiDropdownProps {
   onChange: (e: DropdownChangeEvent) => void
@@ -22,6 +16,12 @@ interface ApiDropdownProps {
   placeholder: string
   className?: string
   avatar?: boolean
+  showClear?: boolean
+  disabled?: boolean
+
+  /** 👇 Cho phép cấu hình key cho id và label */
+  valueKey?: string
+  labelKey?: string
 }
 
 const Dropdown: React.FC<ApiDropdownProps> = ({
@@ -31,7 +31,11 @@ const Dropdown: React.FC<ApiDropdownProps> = ({
   apiEndPoint,
   placeholder,
   className = '',
-  avatar = false
+  avatar = false,
+  showClear = true,
+  disabled = false,
+  valueKey = 'id', // <--- default vẫn là id
+  labelKey = 'name' // <--- default vẫn là name
 }) => {
   const [options, setOptions] = useState<RoleOption[]>([])
   const [loading, setLoading] = useState(false)
@@ -40,7 +44,7 @@ const Dropdown: React.FC<ApiDropdownProps> = ({
     async function fetchData() {
       try {
         setLoading(true)
-        const response = await api.get(`${apiEndPoint}`)
+        const response = await api.get(apiEndPoint)
         setOptions(response.data.data)
       } catch (err) {
         const error = err as AxiosError<ApiErrorResponse>
@@ -56,36 +60,33 @@ const Dropdown: React.FC<ApiDropdownProps> = ({
     <PrimeDropdown
       name={name}
       value={value}
-      optionLabel='name'
-      optionValue='id'
+      optionLabel={labelKey}
+      optionValue={valueKey}
       options={options}
       onChange={onChange}
       placeholder={`-- Chọn ${placeholder} --`}
       className={`flex items-center ${className}`}
+      disabled={disabled}
       itemTemplate={(option: RoleOption) => (
-        <div
-          className='flex items-center gap-2 px-2 py-1 rounded-md'
-          style={{
-            backgroundColor: option.color ? option.color + '20' : 'transparent'
-          }}
-        >
+        <div className='flex items-center gap-2 px-2 py-1 rounded-md'>
           {avatar ? (
             <>
-              <Avatar name={option.name} avatarUrl={option.avatar} size={30} />
+              <Avatar name={option[labelKey]} avatarUrl={option.avatar} size={30} />
               <div className='flex flex-col'>
-                <span className='text-md  text-black'>{option.name}</span>
-                <span className='text-sm text-gray-600'>
-                  {option.email} &middot; ID: {option.id}
-                </span>
+                <span className='text-md text-black'>{option[labelKey]}</span>
+                {option.email && (
+                  <span className='text-sm text-gray-600'>
+                    {option.email} &middot; ID: {option[valueKey]}
+                  </span>
+                )}
               </div>
             </>
           ) : (
             <>
-              <div
-                className='w-3 h-3 rounded-md border border-gray-300'
-                style={{ backgroundColor: option.color ?? '#ccc' }}
-              />
-              <span className='text-sm text-gray-800'>{option.name}</span>
+              {option.color && (
+                <div className='w-3 h-3 rounded-md border border-gray-300' style={{ backgroundColor: option.color }} />
+              )}
+              <span className='text-sm text-gray-800'>{option[labelKey]}</span>
             </>
           )}
         </div>
@@ -96,23 +97,25 @@ const Dropdown: React.FC<ApiDropdownProps> = ({
           <div className='flex items-center gap-2'>
             {avatar ? (
               <>
-                <Avatar name={option.name} avatarUrl={option.avatar} size={30} />
-                <span className='text-md  text-black'>{option.name}</span>
+                <Avatar name={option[labelKey]} avatarUrl={option.avatar} size={30} />
+                <span className='text-md text-black'>{option[labelKey]}</span>
               </>
             ) : (
               <>
-                <div
-                  className='w-3 h-3 rounded-md border border-gray-300'
-                  style={{ backgroundColor: option.color ?? '#ccc' }}
-                />
-                <span>{option.name}</span>
+                {option.color && (
+                  <div
+                    className='w-3 h-3 rounded-md border border-gray-300'
+                    style={{ backgroundColor: option.color }}
+                  />
+                )}
+                <span>{option[labelKey]}</span>
               </>
             )}
           </div>
         )
       }}
       loading={loading}
-      showClear
+      showClear={showClear}
       emptyMessage='Không có dữ liệu'
     />
   )

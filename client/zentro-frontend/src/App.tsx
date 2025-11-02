@@ -17,8 +17,9 @@ import Dashboard from './feature/member/pages/Dashboard'
 import ProjectViewModal from './feature/admin/pages/ProjectViewModal'
 import Test from './feature/auth/components/Test'
 import GuestRoute from './util/GuestRoute'
-import MemberMainLayout from './feature/member/components/MemberMainLayout'
 import ProjectView from './feature/member/pages/ProjectView'
+import Chat from './feature/member/pages/Chat'
+import MemberMainLayout from './feature/member/components/layout/MemberMainLayout'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -112,7 +113,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route path='users' element={<Test />} />
+              <Route path='chat' element={<Chat />} />
               <Route path='projects/:projectId/*' element={<ProjectView />} />
             </Route>
 

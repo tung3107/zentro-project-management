@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import styled from 'styled-components'
 import { ChartWrapper, Header } from './TaskProgressCard'
-import Avatar from '../../../components/Avatar'
+import Avatar from '../../../../components/Avatar'
 
 interface WorkLoadData {
   user_id: string

@@ -8,6 +8,7 @@ const {
   getProjectListByUser,
   createOneProject,
   getProjectStats,
+  getProjectSummary,
 } = require("../controllers/project.controller");
 const upload = require("../middlewares/upload");
 
@@ -34,6 +35,8 @@ routes
 routes
   .route("/get-project-by-user/:user_id")
   .get(protectRoute, getProjectListByUser);
+
+routes.route("/:project_id/summary").get(protectRoute, getProjectSummary);
 
 // authorize("project", "read"),
 

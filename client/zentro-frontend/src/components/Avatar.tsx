@@ -23,7 +23,8 @@ const getBgColor = (name: string) => {
     '#795548', // Brown
     '#607D8B'
   ]
-  const index = name.charCodeAt(0) % colors.length
+  const safeName = name?.trim() || '?'
+  const index = safeName.charCodeAt(0) % colors.length
   return colors[index]
 }
 
@@ -37,11 +38,14 @@ export default function Avatar({ name, size = 40, avatarUrl }: Avatar) {
   const initial = getInitial(name)
   const bgColor = getBgColor(name)
 
+  // Convert File to string URL if needed
+  const avatarSrc = typeof avatarUrl === 'string' ? avatarUrl : avatarUrl ? URL.createObjectURL(avatarUrl) : null
+
   return (
     <>
-      {avatarUrl ? (
+      {avatarSrc ? (
         <img
-          src={avatarUrl}
+          src={avatarSrc}
           alt='avatar'
           style={{
             width: size,

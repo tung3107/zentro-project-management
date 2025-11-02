@@ -1,9 +1,13 @@
 const { sequelize } = require("../config/database");
 const ActivityLog = require("./ActivityLog");
 const Attachment = require("./Attachment");
+const Chat = require("./Chat");
+const ChatMember = require("./ChatMember");
 const Comment = require("./Comment");
 const Label = require("./Label");
+const MediaFile = require("./MediaFile");
 const Member = require("./Member");
+const Message = require("./Message");
 const Permission = require("./Permission");
 const Project = require("./Project");
 const ProjectStatus = require("./ProjectStatus");
@@ -283,5 +287,42 @@ User.hasMany(ActivityLog, {
   foreignKey: "user_id",
   as: "activityLogs",
 });
+
+//// TASK - TASK
+// Tự liên kết
+Task.belongsTo(Task, { as: "parent", foreignKey: "parent_id" });
+Task.hasMany(Task, { as: "subtasks", foreignKey: "parent_id" });
+
+// Chat
+
+Chat.belongsToMany(User, {
+  through: ChatMember,
+  foreignKey: "chat_id",
+  otherKey: "user_id",
+  as: "members",
+});
+
+User.belongsToMany(Chat, {
+  through: ChatMember,
+  foreignKey: "user_id",
+  otherKey: "chat_id",
+  as: "chats",
+});
+
+// Direct relationships with ChatMember
+Chat.hasMany(ChatMember, { foreignKey: "chat_id", as: "chatMembers" });
+ChatMember.belongsTo(Chat, { foreignKey: "chat_id" });
+
+User.hasMany(ChatMember, { foreignKey: "user_id", as: "chatMemberships" });
+ChatMember.belongsTo(User, { foreignKey: "user_id" });
+
+Chat.hasMany(Message, { foreignKey: "chat_id", as: "messages" });
+Message.belongsTo(Chat, { foreignKey: "chat_id" });
+
+User.hasMany(Message, { foreignKey: "sender_id", as: "sentMessages" });
+Message.belongsTo(User, { foreignKey: "sender_id", as: "sender" });
+
+Chat.hasMany(MediaFile, { foreignKey: "chat_id", as: "mediaFiles" });
+MediaFile.belongsTo(Chat, { foreignKey: "chat_id" });
 
 module.exports = { sequelize, connectDB };
