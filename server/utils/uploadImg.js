@@ -35,7 +35,7 @@ exports.uploadFile = async (file) => {
     const formData = new FormData();
     formData.append("file", base64File);
     formData.append("upload_preset", "huhuasdasd");
-    formData.append("resource_type", "raw"); // Important: Set resource type for non-image files
+    formData.append("resource_type", "auto");
 
     const response = await axios.post(
       "https://api.cloudinary.com/v1_1/deounhiee/raw/upload",

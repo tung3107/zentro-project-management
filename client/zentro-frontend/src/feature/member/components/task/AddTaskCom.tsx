@@ -8,7 +8,7 @@ import type { AxiosError } from 'axios'
 import { toast } from 'sonner'
 import { useAuthStore } from '../../../auth/stores/authStore'
 import type { Task } from '../../../../types/task'
-import { createTaskAPI } from '../../service/task.service'
+import { createTaskAPI, createTaskLinkAPI } from '../../service/task.service'
 import type { ApiErrorResponse } from '../../../auth/hooks/useAuth'
 import { type, type TypeOption } from '../../../../types/type'
 import Dropdown from '../../../../components/Dropdown'
@@ -16,6 +16,8 @@ import PrioritySelect from '../../../../components/PrioritySelect'
 import DescriptionEditor from '../../../../components/DescriptionEditor'
 import Button from '../../../../components/Button'
 import { LoadingBlob } from '../../../../components/LoadingBlob'
+import LinkedTasksInput from './LinkedTasksInput'
+import AIDescriptionButton from './AIDescriptionButton'
 
 export default function AddTaskCom({
   setAddModalOpen,
@@ -43,6 +45,7 @@ export default function AddTaskCom({
   } as Partial<Task>)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [linkedTaskIds, setLinkedTaskIds] = useState<number[]>([])
 
   // Update status_id when initialStatusId changes
   useEffect(() => {
@@ -59,7 +62,7 @@ export default function AddTaskCom({
 
     if (!formData.title) newErrors.title = 'Tên công việc là trường bắt buộc'
 
-    if (formData.priority === undefined || formData.priority < 0) {
+    if (formData.priority < -1) {
       newErrors.priority = 'Độ ưu tiên là trường bắt buộc'
     }
 
@@ -106,7 +109,13 @@ export default function AddTaskCom({
     if (validate()) {
       try {
         setIsLoading(true)
-        await createTaskAPI(formData as Task)
+        const response = await createTaskAPI(formData as Task)
+        const createdTask = response.data
+
+        // Create task links if any
+        if (linkedTaskIds.length > 0 && createdTask?.task_id) {
+          await Promise.all(linkedTaskIds.map((linkedTaskId) => createTaskLinkAPI(createdTask.task_id, linkedTaskId)))
+        }
 
         onSuccess?.()
         toast.success('Tạo task thành công!')
@@ -114,7 +123,7 @@ export default function AddTaskCom({
         setAddModalContent(null)
       } catch (err) {
         const error = err as AxiosError<ApiErrorResponse>
-        toast.error(error.response?.data.error.message ?? 'Lỗi khi tạo role!')
+        toast.error(error.response?.data.error.message ?? 'Lỗi khi tạo task!')
       } finally {
         setIsLoading(false)
       }
@@ -199,7 +208,13 @@ export default function AddTaskCom({
 
             {/* Description */}
             <div className='flex flex-col gap-2'>
-              <label className='block text-sm font-medium text-gray-700'>Mô tả</label>
+              <div className='flex items-center justify-between mb-1'>
+                <label className='block text-sm font-medium text-gray-700'>Mô tả</label>
+                <AIDescriptionButton
+                  projectId={projectId}
+                  onDescriptionGenerated={(description) => setFormData({ ...formData, description })}
+                />
+              </div>
               <DescriptionEditor
                 placeholder='We support markdown! Try **bold**, `inline code`, or ``` for code blocks.'
                 value={formData.description || ''}
@@ -345,33 +360,26 @@ export default function AddTaskCom({
           <div className='bg-white rounded-xl border border-gray-200 p-6 space-y-4'>
             <h3 className='text-sm font-semibold text-gray-900 uppercase tracking-wide'>Tùy chọn</h3>
 
-            <div className='grid grid-cols-2 gap-4'>
-              <div className='flex flex-col gap-2'>
-                <label className='block text-sm font-medium text-gray-700'>Sprint</label>
-                <Dropdown
-                  placeholder='sprint'
-                  name='sprint_id'
-                  apiEndPoint={`/sprints/project/${projectId}`}
-                  onChange={(e) => handleInputChange('sprint_id', e?.target?.value)}
-                  value={formData.sprint_id ?? null}
-                  className='h-[40px]! w-full!'
-                  valueKey='sprint_id'
-                  labelKey='name'
-                />
-              </div>
-
-              <div className='flex flex-col gap-2'>
-                <label className='block text-sm font-medium text-gray-700'>Công việc liên quan</label>
-                <Dropdown
-                  placeholder='parent task'
-                  name='parent_id'
-                  apiEndPoint={`/tasks/dropdown/${projectId}`}
-                  onChange={(e) => handleInputChange('parent_id', e?.target?.value)}
-                  value={formData.parent_id ?? null}
-                  className='h-[40px]! w-full!'
-                />
-              </div>
+            <div className='flex flex-col gap-2'>
+              <label className='block text-sm font-medium text-gray-700'>Sprint</label>
+              <Dropdown
+                placeholder='sprint'
+                name='sprint_id'
+                apiEndPoint={`/sprints/project/${projectId}`}
+                onChange={(e) => handleInputChange('sprint_id', e?.target?.value)}
+                value={formData.sprint_id ?? null}
+                className='h-[40px]! w-full!'
+                valueKey='sprint_id'
+                labelKey='name'
+              />
             </div>
+
+            {/* Linked Tasks Input */}
+            <LinkedTasksInput
+              projectId={projectId}
+              linkedTaskIds={linkedTaskIds}
+              onLinkedTasksChange={setLinkedTaskIds}
+            />
           </div>
         </div>
 

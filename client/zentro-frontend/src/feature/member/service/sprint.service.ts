@@ -35,3 +35,16 @@ export const startsprintAPI = async (sprint: Sprint) => {
   const response = await api.post(`/sprints/start-sprint/${sprint.sprint_id}`, sprint)
   return response.data
 }
+
+export const completeSprintAPI = async (
+  sprint_id: number,
+  incompleteTasks: { taskId: string; action: 'backlog' | 'nextSprint'; targetSprintId?: number | null }[]
+) => {
+  const response = await api.post(`/sprints/complete-sprint/${sprint_id}`, { incompleteTasks })
+  return response.data
+}
+
+export const checkCompleteSprintAPI = async (sprint_id: number) => {
+  const response = await api.get(`/sprints/check-complete-sprint/${sprint_id}`)
+  return response.data
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from 'react'
 import styled, { css } from 'styled-components'
-import { MenuIcon, SquareArrowRight, XIcon } from 'lucide-react'
+import { LogOut, MenuIcon, SettingsIcon, SquareArrowRight, User, XIcon } from 'lucide-react'
 import { useAuthStore } from '../../auth/stores/authStore'
 import Avatar from '../../../components/Avatar'
 import Logo from '../../../components/Logo'
@@ -127,27 +127,47 @@ const UserMenu = ({ menuRef, logout }: { menuRef: React.RefObject<HTMLDivElement
   return (
     <div
       ref={menuRef}
-      className='absolute  mt-2 w-48 bg-white shadow-[4px_-4px_20px_2px_rgb(0,0,0,0.25)] rounded-xl'
+      className='absolute mt-1 w-56 bg-white shadow-xl border border-gray-200 rounded-xl z-50'
       style={{
         position: 'absolute',
-        left: '100%', // đẩy sang phải bên cạnh UserSection
-        top: '10%', // giữa theo chiều dọc avatar
+        left: '100%',
+        top: '-30%',
         transform: 'translateY(-50%)',
         zIndex: 99
       }}
     >
-      <ul className='flex flex-col items-start py-2'>
+      <ul className='flex flex-col py-2'>
         <li className='w-full'>
-          <NavLink className='px-4 py-2 hover:bg-gray-100 cursor-pointer block' to='/app/profile'>
-            Profile
+          <NavLink
+            className='px-4 py-2.5 hover:bg-gray-50 cursor-pointer block text-sm font-medium text-gray-700 transition-colors'
+            // to={`/member/profile/${user?.user_id}`}
+          >
+            <div className='flex items-center gap-3'>
+              <User size={18} className='text-gray-500' />
+              <span>Profile</span>
+            </div>
           </NavLink>
         </li>
-        <li className='px-4 py-2 hover:bg-gray-100 cursor-pointer'>
-          <button className='w-full block'>Setting</button>
+        <li className='w-full'>
+          <NavLink
+            className='px-4 py-2.5 hover:bg-gray-50 cursor-pointer block text-sm font-medium text-gray-700 transition-colors'
+            to='/member/settings'
+          >
+            <div className='flex items-center gap-3'>
+              <SettingsIcon size={18} className='text-gray-500' />
+              <span>Settings</span>
+            </div>
+          </NavLink>
         </li>
-        <li className='px-4 py-2 hover:bg-gray-100 cursor-pointer w-full'>
-          <button className='block cursor-pointer' onClick={logout}>
-            Logout
+        <li className='w-full border-t border-gray-200 mt-1 pt-1'>
+          <button
+            className='w-full px-4 py-2.5 hover:bg-red-50 cursor-pointer block text-sm font-medium text-red-600 transition-colors text-left'
+            onClick={logout}
+          >
+            <div className='flex items-center gap-3'>
+              <LogOut size={18} className='text-red-500' />
+              <span>Logout</span>
+            </div>
           </button>
         </li>
       </ul>

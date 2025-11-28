@@ -17,6 +17,12 @@ const routes = express.Router();
 routes.route("/project-stats").get(protectRoute, getProjectStats);
 
 routes
+  .route("/get-project-by-user/:user_id")
+  .get(protectRoute, getProjectListByUser);
+
+routes.route("/:project_id/summary").get(protectRoute, getProjectSummary);
+
+routes
   .route("/")
   .get(protectRoute, authorize("project", "read"), getAllProjectsWithParam)
   .post(protectRoute, upload.single("avatar"), createOneProject);
@@ -31,12 +37,6 @@ routes
     updateOneProject
   )
   .delete(protectRoute, authorize("project", "delete"), deleteOneProject);
-
-routes
-  .route("/get-project-by-user/:user_id")
-  .get(protectRoute, getProjectListByUser);
-
-routes.route("/:project_id/summary").get(protectRoute, getProjectSummary);
 
 // authorize("project", "read"),
 

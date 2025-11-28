@@ -14,18 +14,53 @@ exports.getOneTask = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.deleteOneTask = catchAsync(async (req, res, next) => {
-  const { task_id } = req.params;
+exports.createTaskLink = catchAsync(async (req, res, next) => {
+  const { task_id, linked_task_id } = req.body;
   const user_id = req.user.user_id;
 
-  const data = await new TaskService().deleteOneTask(task_id, user_id);
-
-  const io = getIO();
-  io.emit("task:deleted", { task_id });
+  const data = await new TaskService().createTaskLink(
+    task_id,
+    linked_task_id,
+    user_id
+  );
 
   res.status(200).json({
     status: "success",
     data,
+  });
+});
+
+exports.deleteTaskLink = catchAsync(async (req, res, next) => {
+  const { task_id, linked_task_id } = req.body;
+  const user_id = req.user.user_id;
+
+  const data = await new TaskService().deleteTaskLink(
+    task_id,
+    linked_task_id,
+    user_id
+  );
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});
+
+exports.deleteOneTask = catchAsync(async (req, res, next) => {
+  const { task_id } = req.params;
+  const user_id = req.user.user_id;
+
+  const { project_id } = await new TaskService().deleteOneTask(
+    task_id,
+    user_id
+  );
+
+  const io = getIO();
+  io.to(`project_${project_id}`).emit("task:deleted", { task_id });
+
+  res.status(200).json({
+    status: "success",
+    data: { project_id },
   });
 });
 
@@ -68,7 +103,7 @@ exports.updateOneTask = catchAsync(async (req, res, next) => {
   });
 
   const io = getIO();
-  io.emit("task:updated", { task_id, ...req.body });
+  io.to(`project_${project_id}`).emit("task:updated", data);
 
   res.status(200).json({
     status: "success",
@@ -159,7 +194,7 @@ exports.createTask = catchAsync(async (req, res, next) => {
   });
 
   const io = getIO();
-  io.emit("task:created", data);
+  io.to(`project_${project_id}`).emit("task:created", data);
 
   res.status(201).json({
     status: "success",
@@ -210,6 +245,46 @@ exports.getTasksByMonth = catchAsync(async (req, res, next) => {
     parseInt(year),
     parseInt(month),
     assignee_id
+  );
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});
+
+exports.getTasksForListView = catchAsync(async (req, res, next) => {
+  const { project_id } = req.params;
+  const user_id = req.user.user_id;
+  const { search, status_id, assignee_id, type } = req.query;
+
+  const filters = {};
+  if (status_id) filters.status_id = parseInt(status_id);
+  if (assignee_id) filters.assignee_id = assignee_id;
+  if (type) filters.type = type;
+
+  const data = await new TaskService().getTasksForListView(
+    user_id,
+    project_id,
+    search,
+    filters
+  );
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});
+
+exports.searchTasksForMention = catchAsync(async (req, res, next) => {
+  const { project_id } = req.params;
+  const user_id = req.user.user_id;
+  const { q } = req.query;
+
+  const data = await new TaskService().searchTasksForMention(
+    user_id,
+    project_id,
+    q
   );
 
   res.status(200).json({

@@ -122,8 +122,6 @@ export default function EditRoleCom({
     })
   }
 
-  console.log(role)
-
   return (
     <form style={{ color: '#1C272D' }} className='relative flex-1 mb-[80px] overflow-y-auto' onSubmit={handleSubmit}>
       <div className='project-infor py-1 px-3'>

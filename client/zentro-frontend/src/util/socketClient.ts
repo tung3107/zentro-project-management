@@ -20,7 +20,7 @@ class SocketClient {
       return
     }
 
-    const SOCKET_URL = import.meta.env.VITE_REACT_API_URL?.replace('/api/v1', '') || 'http://localhost:3501'
+    const SOCKET_URL = import.meta.env.VITE_REACT_API_URL?.replace('/api/v1', '') || 'http://localhost:3502'
 
     this.socket = io(SOCKET_URL, {
       auth: {
@@ -123,6 +123,14 @@ class SocketClient {
     this.socket?.emit('user_unblocked', { chatId, userId })
   }
 
+  joinProject(projectId: string) {
+    this.socket?.emit('join_project', projectId)
+  }
+
+  leaveProject(projectId: string) {
+    this.socket?.emit('leave_project', projectId)
+  }
+
   // ====================
   // LISTEN TO EVENTS
   // ====================
@@ -179,6 +187,22 @@ class SocketClient {
     this.socket?.on('user_offline', callback)
   }
 
+  onTaskCreated(callback: (task: any) => void) {
+    this.socket?.on('task:created', callback)
+  }
+
+  onTaskUpdated(callback: (task: any) => void) {
+    this.socket?.on('task:updated', callback)
+  }
+
+  onTaskDeleted(callback: (data: { task_id: string }) => void) {
+    this.socket?.on('task:deleted', callback)
+  }
+
+  onNewNotification(callback: (notification: any) => void) {
+    this.socket?.on('new_notification', callback)
+  }
+
   // ====================
   // REMOVE LISTENERS
   // ====================
@@ -233,6 +257,22 @@ class SocketClient {
 
   offUserOffline() {
     this.socket?.off('user_offline')
+  }
+
+  offTaskCreated() {
+    this.socket?.off('task:created')
+  }
+
+  offTaskUpdated() {
+    this.socket?.off('task:updated')
+  }
+
+  offTaskDeleted() {
+    this.socket?.off('task:deleted')
+  }
+
+  offNewNotification() {
+    this.socket?.off('new_notification')
   }
 
   removeAllListeners() {

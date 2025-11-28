@@ -18,8 +18,11 @@ exports.getOnePermission = catchAsync(async (req, res, next) => {
   });
 });
 exports.getListOfPermissionByRole = catchAsync(async (req, res, next) => {
-  const { role_id, is_change_password } = req.user;
-  const data = await new PermissionService().getListOfPermissionByRole(role_id);
+  const { role_id, is_change_password, user_id } = req.user;
+  const data = await new PermissionService().getListOfPermissionByRole(
+    role_id,
+    user_id
+  );
   if (!data) {
     throw new ApiError("Permission id không tồn tại", 404);
   }

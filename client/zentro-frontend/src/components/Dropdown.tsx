@@ -22,6 +22,7 @@ interface ApiDropdownProps {
   /** 👇 Cho phép cấu hình key cho id và label */
   valueKey?: string
   labelKey?: string
+  avatarSize?: number
 }
 
 const Dropdown: React.FC<ApiDropdownProps> = ({
@@ -35,7 +36,8 @@ const Dropdown: React.FC<ApiDropdownProps> = ({
   showClear = true,
   disabled = false,
   valueKey = 'id', // <--- default vẫn là id
-  labelKey = 'name' // <--- default vẫn là name
+  labelKey = 'name', // <--- default vẫn là name
+  avatarSize = 30
 }) => {
   const [options, setOptions] = useState<RoleOption[]>([])
   const [loading, setLoading] = useState(false)
@@ -68,10 +70,10 @@ const Dropdown: React.FC<ApiDropdownProps> = ({
       className={`flex items-center ${className}`}
       disabled={disabled}
       itemTemplate={(option: RoleOption) => (
-        <div className='flex items-center gap-2 px-2 py-1 rounded-md'>
+        <div className='flex items-center gap-2 px-1 py-1 rounded-md'>
           {avatar ? (
             <>
-              <Avatar name={option[labelKey]} avatarUrl={option.avatar} size={30} />
+              <Avatar name={option[labelKey]} avatarUrl={option.avatar} size={avatarSize} />
               <div className='flex flex-col'>
                 <span className='text-md text-black'>{option[labelKey]}</span>
                 {option.email && (
@@ -97,7 +99,7 @@ const Dropdown: React.FC<ApiDropdownProps> = ({
           <div className='flex items-center gap-2'>
             {avatar ? (
               <>
-                <Avatar name={option[labelKey]} avatarUrl={option.avatar} size={30} />
+                <Avatar name={option[labelKey]} avatarUrl={option.avatar} size={avatarSize} />
                 <span className='text-md text-black'>{option[labelKey]}</span>
               </>
             ) : (

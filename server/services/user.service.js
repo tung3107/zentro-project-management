@@ -15,7 +15,7 @@ const { sequelize } = require("../config/database");
 class UserService {
   async getListOfUser() {
     try {
-      const roleNames = ["Leader", "Project Manager"];
+      const roleNames = ["Leader", "Project Manager", "Trưởng nhóm"];
 
       const leaders = await Member.findAll({
         include: [
@@ -59,9 +59,28 @@ class UserService {
   }
   async getOneUser(user_id) {
     try {
-      const data = await User.findOne({
-        user_id: user_id,
+      const data = await Member.findOne({
+        where: { user_id },
+        include: [
+          {
+            model: Role,
+            as: "role",
+            attributes: ["role_name"],
+          },
+          {
+            model: User,
+            as: "user",
+            attributes: [
+              "user_id",
+              "first_name",
+              "last_name",
+              "phone",
+              "email",
+            ],
+          },
+        ],
       });
+
       return data;
     } catch (err) {
       throw new ApiError(`Error: ${err.message}`, 400);
@@ -151,11 +170,14 @@ class UserService {
         raw: true,
       });
 
-      if (!data) throw new ApiError(`Không tìm thấy người dùng`, 400);
+      if (!data || data.length === 0) {
+        throw new ApiError(`Không tìm thấy người dùng`, 400);
+      }
 
       return data;
     } catch (error) {
-      throw new ApiError(`Error: ${err.message}`, 400);
+      console.error("❌ searchUserForProject error:", error.message);
+      throw new ApiError(`Error: ${error.message}`, 400);
     }
   }
 

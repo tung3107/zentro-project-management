@@ -1,3 +1,4 @@
+const Member = require("../models/Member");
 const Permission = require("../models/Permission");
 const Role = require("../models/Role");
 
@@ -17,14 +18,15 @@ class PermissionService {
     };
   }
 
-  async getListOfPermissionByRole(role_id) {
-    const role = await Permission.findAll({
+  async getListOfPermissionByRole(role_id, user_id) {
+    // Get system role permissions
+    let systemPermissions = await Permission.findAll({
       include: [
         {
           model: Role,
           as: "roles",
           attributes: [],
-          through: { attributes: [] }, // ẩn cột ở bảng trung gian
+          through: { attributes: [] },
           where: { role_id },
         },
       ],
@@ -32,7 +34,47 @@ class PermissionService {
       attributes: ["resource", "action"],
     });
 
-    return role;
+    // Get all project roles for this user
+    const memberRoles = await Member.findAll({
+      where: { user_id, is_delete: 0 },
+      include: [
+        {
+          model: Role,
+          as: "role",
+          attributes: ["role_id"],
+          include: [
+            {
+              model: Permission,
+              as: "permissions",
+              attributes: ["resource", "action"],
+              through: { attributes: [] },
+            },
+          ],
+        },
+      ],
+    });
+
+    const projectPermissions = [];
+    memberRoles.forEach((member) => {
+      if (member.role && member.role.permissions) {
+        member.role.permissions.forEach((perm) => {
+          projectPermissions.push({
+            resource: perm.resource,
+            action: perm.action,
+          });
+        });
+      }
+    });
+
+    // Combine and deduplicate permissions
+    const allPermissions = [...systemPermissions, ...projectPermissions];
+    const uniquePermissions = Array.from(
+      new Map(
+        allPermissions.map((p) => [`${p.resource}-${p.action}`, p])
+      ).values()
+    );
+
+    return uniquePermissions;
   }
 
   async getListOfPermissionByResource() {

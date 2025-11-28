@@ -181,6 +181,26 @@ function initSocket(server) {
     });
 
     // ====================
+    // JOIN PROJECT ROOM
+    // ====================
+    socket.on("join_project", (projectId) => {
+      socket.join(`project_${projectId}`);
+      console.log(
+        `User ${socket.userId} joined project room ${projectId}`
+      );
+    });
+
+    // ====================
+    // LEAVE PROJECT ROOM
+    // ====================
+    socket.on("leave_project", (projectId) => {
+      socket.leave(`project_${projectId}`);
+      console.log(
+        `User ${socket.userId} left project room ${projectId}`
+      );
+    });
+
+    // ====================
     // DISCONNECT
     // ====================
     socket.on("disconnect", () => {

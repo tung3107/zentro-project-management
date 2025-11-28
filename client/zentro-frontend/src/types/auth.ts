@@ -6,6 +6,7 @@ export interface User {
   role_id: string
   role_name: string
   role?: Role
+  avatar?: string
 }
 
 export interface Role {

@@ -233,12 +233,16 @@ export default function BurndownModal({ isOpen, onClose, data }: BurndownModalPr
           </div>
 
           {/* Legend Explanation */}
-          <div className='mt-4 p-4 bg-blue-50 rounded-lg'>
+          <div className='mt-4 p-4 bg-blue-50 rounded-lg space-y-2'>
             <p className='text-sm text-gray-700'>
               <strong>Đường lý tưởng (nét đứt):</strong> Tiến độ hoàn thành đều đặn mỗi ngày
             </p>
-            <p className='text-sm text-gray-700 mt-1'>
+            <p className='text-sm text-gray-700'>
               <strong>Đường thực tế (nét liền):</strong> Tiến độ hoàn thành thực tế của team
+            </p>
+            <p className='text-xs text-gray-600 mt-2 italic'>
+              * Đường thực tế hiển thị trạng thái hiện tại của các task. Để theo dõi chính xác tiến độ theo ngày, cần có
+              hệ thống ghi lại lịch sử thay đổi trạng thái.
             </p>
           </div>
         </div>

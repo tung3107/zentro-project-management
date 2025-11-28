@@ -1,6 +1,9 @@
 import type { Task } from '../../../../types/task'
 import type { Sprint } from '../../../../types/sprint'
 import { useNavigate } from 'react-router-dom'
+import { get } from 'http'
+import { priorityColors, type } from '../../../../types/type'
+import Avatar from '../../../../components/Avatar'
 
 interface CalendarViewProps {
   tasks: Task[]
@@ -105,8 +108,6 @@ export default function CalendarView({ tasks, sprints, currentDate, onTaskClick 
     }
   }
 
-  const priorityColors = ['#95a5a6', '#3498db', '#d23232', '#f37121', '#cb0404']
-
   return (
     <div className='flex-1 bg-white rounded-xl border border-gray-200 overflow-visible'>
       {/* Sprint Legend */}
@@ -164,7 +165,6 @@ export default function CalendarView({ tasks, sprints, currentDate, onTaskClick 
                   <span className='text-xs text-gray-500 font-medium'>+{dayTasks.length - 3}</span>
                 )}
               </div>
-
               {/* Sprint bars */}
               {daySprints.length > 0 && (
                 <div className='mb-1.5 space-y-0.5'>
@@ -243,11 +243,15 @@ export default function CalendarView({ tasks, sprints, currentDate, onTaskClick 
                   )}
                 </div>
               )}
-
               {/* Tasks for this day (max 3 visible) */}
               <div className='space-y-1'>
                 {dayTasks.slice(0, 3).map((task) => {
-                  const priorityColor = priorityColors[task.priority || 0]
+                  const taskType = type.find((t) => t.value === task.type && t.value !== 'subtask')
+
+                  const priorityInfo = priorityColors.find((p) => p.value === task.priority) || {
+                    label: 'Không xác định',
+                    color: '#9ca3af'
+                  }
 
                   return (
                     <button
@@ -256,18 +260,39 @@ export default function CalendarView({ tasks, sprints, currentDate, onTaskClick 
                         onTaskClick(task)
                         navigate(`calendar?task=${task.task_id}`)
                       }}
-                      className='w-full text-left px-2 py-1 rounded text-xs hover:shadow-md transition-shadow border-l-2 bg-gray-50 hover:bg-gray-100'
-                      style={{ borderLeftColor: priorityColor }}
+                      className='w-full flex items-center gap-1.5 px-1.5 py-1 rounded text-[11px] bg-white hover:bg-gray-50 border border-gray-200 hover:border-blue-300 transition-all group'
                     >
-                      <div className='flex items-center gap-1'>
-                        <span className='font-medium text-gray-900 truncate'>{task.title}</span>
-                      </div>
+                      {/* Task type icon */}
+                      {taskType?.icon && (
+                        <span className='flex-shrink-0' title={taskType.label}>
+                          {taskType.icon}
+                        </span>
+                      )}
+
+                      {/* Task title */}
+                      <span className='font-medium text-gray-800 truncate flex-1 group-hover:text-blue-600'>
+                        {task.title}
+                      </span>
+
+                      {/* Priority indicator */}
+                      <div
+                        className='w-1.5 h-1.5 rounded-full flex-shrink-0'
+                        style={{ backgroundColor: priorityInfo.color }}
+                        title={priorityInfo.label}
+                      />
+
+                      {/* Assignee avatar */}
                       {task.assignee && (
-                        <div className='text-gray-600 text-[10px] mt-0.5 truncate'>
-                          {(task.assignee as any).first_name && (task.assignee as any).last_name
-                            ? `${(task.assignee as any).first_name} ${(task.assignee as any).last_name}`
-                            : task.assignee.assignee_name || 'Unknown'}
-                        </div>
+                        <Avatar
+                          avatarUrl={(task.assignee as any).avatar}
+                          name={
+                            (task.assignee as any).first_name ||
+                            (task.assignee as any).last_name ||
+                            task.assignee.assignee_name ||
+                            'Unknown'
+                          }
+                          size={18}
+                        />
                       )}
                     </button>
                   )
@@ -279,4 +304,14 @@ export default function CalendarView({ tasks, sprints, currentDate, onTaskClick 
       </div>
     </div>
   )
+}
+
+{
+  /* {task.assignee && (
+                        <div className='text-gray-600 text-[10px] mt-0.5 truncate'>
+                          {(task.assignee as any).first_name && (task.assignee as any).last_name
+                            ? `${(task.assignee as any).first_name} ${(task.assignee as any).last_name}`
+                            : task.assignee.assignee_name || 'Unknown'}
+                        </div>
+                      )} */
 }

@@ -2,6 +2,7 @@ require("dotenv").config({ path: "./config.env" });
 const app = require("./app");
 const http = require("http");
 const { initSocket } = require("./socket");
+const { scheduleReportGeneration } = require("./scheduler/reportScheduler");
 
 const { connectDB } = require("./models/index");
 const Permission = require("./models/Permission");
@@ -23,6 +24,9 @@ server.listen(port, () => {
 });
 
 connectDB();
+
+// Initialize report scheduler
+scheduleReportGeneration();
 
 process.on("unhandledRejection", (err) => {
   console.log("Unhandled Rejection 💥", err.name, err.message);

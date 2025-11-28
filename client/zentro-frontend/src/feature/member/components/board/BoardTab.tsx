@@ -4,19 +4,20 @@ import { ChartColumnIncreasing, ListFilter, Plus, Repeat, Search, X } from 'luci
 import { Tooltip } from 'primereact/tooltip'
 import { NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Skeleton } from 'primereact/skeleton'
-import io from 'socket.io-client'
+import socketClient from '../../../../util/socketClient'
 import type { Sprint } from '../../../../types/sprint'
 import type { Task } from '../../../../types/task'
+import { useProjectRole } from '../../hooks/useProjectRole'
 import { getCurrentSprintDetails } from '../../service/sprint.service'
 import { getBoard, getBurndownChart, searchBoard } from '../../service/task.service'
-
-import api from '../../../../util/axiosClient'
+import api from "../../../../util/axiosClient"
 import AddTaskCom from '../task/AddTaskCom'
+import { toast } from 'sonner'
 import FilterMenu from '../modal/FilterMenu'
 import BurndownModal from '../modal/BurndownModal'
+import OverlayCenterModal from '../../../../components/OverlayCenterModal'
 import TaskDetailModal from '../task/TaskDetailModal'
 
-const socket = io('http://localhost:3501')
 
 export default function BoardTab() {
   const [query, setQuery] = useState('')
@@ -37,6 +38,7 @@ export default function BoardTab() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const taskIdFromQuery = searchParams.get('task')
+  const { permissions } = useProjectRole()
 
   //// Fetch Data for sprint
 
@@ -100,48 +102,60 @@ export default function BoardTab() {
   }, [query, filters])
 
   // Socket
-
   useEffect(() => {
-    socket.on('connect', () => {
-      console.log('✅ Connected to socket server')
-    })
+  if (projectId) {
+    console.log('🔌 [Socket] Joining project:', projectId)
+    socketClient.joinProject(projectId)
+  }
 
-    socket.on('task:created', (task) => {
-      setColumns((prev) => {
-        const newCols = [...prev]
-        const col = newCols.find((c) => c.id === task.status_id)
-        if (col) col.tasks = [task, ...col.tasks]
-        return newCols
-      })
+  const handleTaskCreated = (task: any) => {
+    console.log('✅ [Socket] Task created:', task)
+    setColumns((prev) => {
+      const newCols = [...prev]
+      const col = newCols.find((c) => c.id === task.status_id)
+      if (col) col.tasks = [task, ...col.tasks]
+      return newCols
     })
+  }
 
-    socket.on('task:updated', (updatedTask) => {
-      setColumns((prev) => {
-        const newCols = prev.map((col) => ({
-          ...col,
-          tasks: col.tasks.filter((t) => t.task_id !== updatedTask.task_id)
-        }))
-        const targetCol = newCols.find((c) => c.id === updatedTask.status_id)
-        if (targetCol) targetCol.tasks = [updatedTask, ...targetCol.tasks]
-        return newCols
-      })
+  const handleTaskUpdated = (updatedTask: any) => {
+    console.log('🔄 [Socket] Task updated:', updatedTask)
+    setColumns((prev) => {
+      const newCols = prev.map((col) => ({
+        ...col,
+        tasks: col.tasks.filter((t) => t.task_id !== updatedTask.task_id)
+      }))
+      const targetCol = newCols.find((c) => c.id === updatedTask.status_id)
+      if (targetCol) targetCol.tasks = [updatedTask, ...targetCol.tasks]
+      return newCols
     })
+  }
 
-    socket.on('task:deleted', ({ id }) => {
-      setColumns((prev) =>
-        prev.map((col) => ({
-          ...col,
-          tasks: col.tasks.filter((t) => t.task_id !== id)
-        }))
-      )
-    })
+  const handleTaskDeleted = ({ task_id }: { task_id: string }) => {
+    console.log('🗑️ [Socket] Task deleted:', task_id)
+    setColumns((prev) =>
+      prev.map((col) => ({
+        ...col,
+        tasks: col.tasks.filter((t) => t.task_id !== task_id)
+      }))
+    )
+  }
 
-    return () => {
-      socket.off('task:created')
-      socket.off('task:updated')
-      socket.off('task:deleted')
+  console.log('👂 [Socket] Registering event listeners...')
+  socketClient.onTaskCreated(handleTaskCreated)
+  socketClient.onTaskUpdated(handleTaskUpdated)
+  socketClient.onTaskDeleted(handleTaskDeleted)
+
+  return () => {
+    console.log('🔌 [Socket] Leaving project:', projectId)
+    if (projectId) {
+      socketClient.leaveProject(projectId)
     }
-  }, [])
+    socketClient.offTaskCreated()
+    socketClient.offTaskUpdated()
+    socketClient.offTaskDeleted()
+  }
+}, [projectId])
 
   /// Handle change function for input
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,6 +178,11 @@ export default function BoardTab() {
   }
 
   const handleOpenAddTaskWithStatus = (statusId: number) => {
+    if (!permissions.canCreateTask) {
+      toast.error('Bạn không có quyền tạo công việc')
+      return
+    }
+
     setAddTaskModalContent(
       <AddTaskCom
         setAddModalOpen={setShowAddTask}
@@ -333,6 +352,9 @@ export default function BoardTab() {
                     setColumns={setColumns}
                     onTaskClick={handleTaskClick}
                     onAddTask={handleOpenAddTaskWithStatus}
+                    onTaskUpdate={handleTaskUpdate}
+                    canDelete={permissions.canDelete}
+                    canEdit={permissions.canEdit}
                   />
                 </div>
               </>
@@ -372,6 +394,23 @@ export default function BoardTab() {
 
             {/* Burndown Modal */}
             <BurndownModal isOpen={showBurndown} onClose={() => setShowBurndown(false)} data={burndownData} />
+
+            {/* Add Task Modal */}
+            {showAddTask && (
+              <OverlayCenterModal
+                isOpen={showAddTask}
+                formable={true}
+                onClose={() => {
+                  setShowAddTask(false)
+                  setAddTaskModalContent(null)
+                }}
+                title='Tạo công việc mới'
+                width='50%'
+                height='90%'
+              >
+                {addTaskModalContent}
+              </OverlayCenterModal>
+            )}
 
             {/* Task Detail Modal */}
             {(selectedTask || taskIdFromQuery) && (

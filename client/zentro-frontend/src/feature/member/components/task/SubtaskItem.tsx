@@ -8,6 +8,8 @@ import { updateSubtaskAPI, deleteSubtaskAPI } from '../../service/task.service'
 import Dropdown from '../../../../components/Dropdown'
 import PrioritySelect from '../../../../components/PrioritySelect'
 import { priorityColors } from '../../../../types/type'
+import { useProjectRole } from '../../hooks/useProjectRole'
+import { toast } from 'sonner'
 
 interface SubtaskItemProps {
   subtask: Task
@@ -23,6 +25,8 @@ export default function SubtaskItem({ subtask, projectId, onUpdated, onDeleted }
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+
+  const { permissions } = useProjectRole()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -64,6 +68,10 @@ export default function SubtaskItem({ subtask, projectId, onUpdated, onDeleted }
   }
 
   const handleDelete = async () => {
+    if (permissions.canDelete) {
+      toast.error('Bạn không có quyền xóa công việc này!')
+      return
+    }
     if (!confirm('Bạn có chắc chắn muốn xóa công việc phụ này?')) return
 
     try {

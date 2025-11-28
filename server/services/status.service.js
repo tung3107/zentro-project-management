@@ -12,7 +12,13 @@ class ProjectStatusService {
 
       const data = await ProjectStatus.findAll({
         where: { project_id: project_id },
-        attributes: [["status_id", "id"], "name", "color"],
+        attributes: [
+          ["status_id", "id"],
+          "name",
+          "color",
+          "background",
+          "border_color",
+        ],
       });
 
       return data;

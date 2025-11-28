@@ -136,17 +136,6 @@ export default function ProjectRoleCom() {
 
   return (
     <>
-      <p className='mb-3 text-gray-600 italic'>
-        Mỗi dự án khi tạo sẽ có sẵn 4 role mặc định không thể xóa:
-        <strong> Leader</strong>, <strong>Developer</strong>, <strong>Tester</strong> và <strong>Viewer</strong>.
-        <strong> Supper Admin</strong> có trách nhiệm gán thành viên vào các role này, trong đó dự án bắt buộc phải có
-        ít nhất <strong>1 role Leader</strong> để đảm bảo có người quản lý và chịu trách nhiệm cho dự án. <br />
-        Ngoài các role mặc định, bạn có thể tạo thêm các role tùy chỉnh khác (ví dụ: Designer, BA...) và thiết lập quyền
-        riêng trong bảng phân quyền.
-      </p>
-
-      <Divider />
-
       <ReusableTable<Role>
         key={reloadKey}
         apiEndPoint='/roles/project-role'

@@ -1,0 +1,180 @@
+{
+  "data": {
+    "tasks": [
+      {
+        "task_id": "380101",
+        "title": "aksk",
+        "description": null,
+        "type": "subtask",
+        "priority": 0,
+        "status": "Cần làm",
+        "status_type": "todo",
+        "assignee": "Unassigned",
+        "assignee_id": null,
+        "reporter": "Unknown",
+        "estimate": null,
+        "spent_time": null,
+        "start_date": null,
+        "due_date": null,
+        "created_at": "2025-11-02T13:22:42.000Z",
+        "updated_at": "2025-11-16T13:48:55.000Z",
+        "sprint": "Sprint 1",
+        "sprint_status": "active",
+        "project_name": "Project Zentro",
+        "is_overdue": null,
+        "days_until_due": null
+      },
+      {
+        "task_id": "318759",
+        "title": "Làm BE",
+        "description": null,
+        "type": "subtask",
+        "priority": 0,
+        "status": "Bị hủy",
+        "status_type": "todo",
+        "assignee": "Unassigned",
+        "assignee_id": null,
+        "reporter": "Unknown",
+        "estimate": null,
+        "spent_time": null,
+        "start_date": null,
+        "due_date": null,
+        "created_at": "2025-11-02T10:31:07.000Z",
+        "updated_at": "2025-11-16T13:48:39.000Z",
+        "sprint": "Sprint 1",
+        "sprint_status": "active",
+        "project_name": "Project Zentro",
+        "is_overdue": null,
+        "days_until_due": null
+      },
+      {
+        "task_id": "571112",
+        "title": "Task Handle chat",
+        "description": null,
+        "type": "task",
+        "priority": 2,
+        "status": "Đang thực hiện",
+        "status_type": "todo",
+        "assignee": "Tung Duong Van",
+        "assignee_id": "2025364436",
+        "reporter": "Tung Duong Van",
+        "estimate": 1.1,
+        "spent_time": null,
+        "start_date": "2025-11-24T17:00:00.000Z",
+        "due_date": "2025-11-28T17:00:00.000Z",
+        "created_at": "2025-11-01T04:20:59.000Z",
+        "updated_at": "2025-11-21T04:19:00.000Z",
+        "sprint": "Backlog",
+        "project_name": "Project Zentro",
+        "is_overdue": false,
+        "days_until_due": 3
+      }
+    ],
+    "comments": [],
+    "members": [
+      {
+        "user_id": "2025349821",
+        "name": "Tùng Dương",
+        "email": "duongtung2106@gmail.com",
+        "avatar": null
+      },
+      {
+        "user_id": "2025364436",
+        "name": "Tung Duong Van",
+        "email": "postungly@gmail.com",
+        "avatar": null
+      },
+      {
+        "user_id": "2025692047",
+        "name": "Nguyễn Văn B",
+        "email": "leader@example.com",
+        "avatar": "https://res.cloudinary.com/deounhiee/image/upload/v1757225865/rpjumzwfzqtmjb1r5ne5.jpg"
+      }
+    ],
+    "sprints": [
+      {
+        "sprint_id": 20,
+        "name": "zzxczxc",
+        "goal": null,
+        "status": "planned",
+        "start_date": "2025-11-25T17:00:00.000Z",
+        "end_date": "2025-12-08T17:00:00.000Z",
+        "velocity_estimate": null
+      },
+      {
+        "sprint_id": 12,
+        "name": "Sprint 2",
+        "goal": null,
+        "status": "planned",
+        "start_date": "2025-11-24T17:00:00.000Z",
+        "end_date": "2025-11-30T17:00:00.000Z",
+        "velocity_estimate": null
+      },
+      {
+        "sprint_id": 19,
+        "name": "ádasd",
+        "goal": null,
+        "status": "planned",
+        "start_date": "2025-11-16T17:00:00.000Z",
+        "end_date": "2025-11-29T17:00:00.000Z",
+        "velocity_estimate": null
+      },
+      {
+        "sprint_id": 7,
+        "name": "Sprint 1",
+        "goal": null,
+        "status": "active",
+        "start_date": "2025-11-09T17:00:00.000Z",
+        "end_date": "2025-11-22T17:00:00.000Z",
+        "velocity_estimate": null
+      }
+    ],
+    "stats": {
+      "total_tasks": 3,
+      "completed_tasks": 0,
+      "in_progress_tasks": 0,
+      "pending_tasks": 3,
+      "overdue_tasks": 0,
+      "tasks_by_priority": {
+        "0": 2,
+        "1": 0,
+        "2": 1,
+        "3": 0
+      },
+      "tasks_by_type": {
+        "subtask": 2,
+        "task": 1
+      },
+      "total_estimate": 1.1,
+      "total_spent_time": 0,
+      "completion_percentage": 0,
+      "sprint_stats": {
+        "total": 4,
+        "active": 1,
+        "completed": 0,
+        "planned": 3
+      },
+      "member_performance": {
+        "2025364436": {
+          "name": "Tung Duong Van",
+          "total_tasks": 1,
+          "completed_tasks": 0,
+          "in_progress_tasks": 0,
+          "overdue_tasks": 0,
+          "total_spent_time": 0
+        }
+      },
+      "upcoming_deadlines": [
+        {
+          "task_id": "571112",
+          "title": "Task Handle chat",
+          "due_date": "2025-11-28T17:00:00.000Z",
+          "assignee": "Tung Duong Van",
+          "days_until_due": 3
+        }
+      ],
+      "overdue_list": []
+    }
+  },
+  "aiAnalysis": "Dưới đây là báo cáo phân tích tiến độ dự án:\n\n# BÁO CÁO TIẾN ĐỘ DỰ ÁN\n\n**Ngày Báo Cáo:** 2024-10-27 (Ngày hiện tại - Ví dụ)\n\n## 1. Tóm Tắt Tổng Quan Tiến Độ\n\n*   **Tiến độ tổng quan: 0/3 task đã hoàn thành (0%)**.\n*   **Tổng số task:** 3\n*   **Task hoàn thành:** 0 (0%)\n*   **Task đang làm:** 0\n*   **Task chưa làm:** 3\n*   **Task quá hạn:** 0\n\n## 2. Phân Tích Chi Tiết\n\n*   **Tỷ lệ hoàn thành và xu hướng:**\n    *   Tỷ lệ hoàn thành hiện tại là **0%**.\n    *   Xu hướng: Dự án đang ở giai đoạn bắt đầu, cần theo dõi sát sao để đảm bảo tiến độ trong các sprint tiếp theo.\n*   **Đánh giá về task quá hạn:**\n    *   Hiện tại **không có task nào quá hạn**.\n    *   Tuy nhiên, cần chủ động quản lý để tránh tình trạng task bị trễ trong tương lai.\n*   **Phân tích về thời gian:**\n    *   **Tổng thời gian ước lượng: 1.1 giờ**.\n    *   **Tổng thời gian đã dùng: 0 giờ**.\n    *   Vì chưa có task nào được thực hiện, nên chưa thể so sánh thời gian ước lượng và thực tế. Cần theo dõi và cập nhật sau khi bắt đầu thực hiện task.\n\n## 3. Highlight Các Vấn Đề Quan Trọng\n\n*   **Task ưu tiên cao chưa hoàn thành:**\n    *   Do chưa có task nào được thực hiện, cần xác định và bắt đầu thực hiện các task ưu tiên cao trong sprint hiện tại.\n*   **Deadline sắp tới:**\n    *   Deadline của Sprint 1 cần được chú ý để đảm bảo hoàn thành các mục tiêu đề ra.\n    *   Cần rà soát và xác định các milestone quan trọng trong Sprint 1 để có kế hoạch thực hiện chi tiết.\n*   **Rủi ro tiềm ẩn:**\n    *   **Rủi ro chậm trễ do chưa bắt đầu thực hiện task nào:** Cần xác định nguyên nhân và có biện pháp khắc phục kịp thời (ví dụ: thiếu nguồn lực, chưa rõ yêu cầu, v.v.).\n    *   **Rủi ro không đủ thời gian:** Cần theo dõi sát sao thời gian thực hiện các task trong các sprint tiếp theo để đảm bảo không vượt quá thời gian ước tính.\n\n## 4. Đề Xuất Hành Động Cụ Thể\n\n*   **Bắt đầu thực hiện các task ưu tiên cao ngay lập tức:**\n    *   Phân công task cụ thể cho từng thành viên.\n    *   Xác định rõ ràng mục tiêu và yêu cầu của từng task.\n*   **Theo dõi tiến độ hàng ngày/hàng tuần:**\n    *   Sử dụng công cụ quản lý dự án để theo dõi tiến độ.\n    *   Tổ chức các buổi họp ngắn hàng ngày/hàng tuần để cập nhật tiến độ và giải quyết các vấn đề phát sinh.\n*   **Cập nhật thời gian ước lượng và thực tế:**\n    *   Ghi lại thời gian thực tế đã sử dụng cho từng task.\n    *   So sánh với thời gian ước lượng để đánh giá hiệu quả và điều chỉnh kế hoạch nếu cần thiết.\n*   **Đánh giá và điều chỉnh kế hoạch sprint:**\n    *   Nếu phát hiện nguy cơ chậm trễ, cần đánh giá lại kế hoạch sprint và điều chỉnh để đảm bảo đạt được mục tiêu.\n    *   Có thể cân nhắc việc chia nhỏ task lớn thành các task nhỏ hơn để dễ dàng quản lý và theo dõi.\n*   **Đảm bảo giao tiếp hiệu quả giữa các thành viên:**\n    *   Khuyến khích các thành viên trao đổi thông tin và giải quyết các vấn đề một cách nhanh chóng.\n    *   Sử dụng các kênh giao tiếp hiệu quả (ví dụ: chat, email, họp online).\n\nBằng việc thực hiện các hành động trên, dự án có thể cải thiện tiến độ và giảm thiểu rủi ro chậm trễ.\n"
+}

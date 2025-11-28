@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import type { Message } from '../../../../types/chat'
+import type { MediaFile, Message } from '../../../../types/chat'
 import { File } from 'lucide-react'
 import { formatTime } from '../../../../util/helper'
 import ImageViewerModal from './ImageViewerModal'
@@ -16,6 +16,23 @@ export default function MessageBubble({
   showSender?: boolean
 }) {
   const [showImageViewer, setShowImageViewer] = useState(false)
+
+  const handleDownloadFile = async (file: Message) => {
+    try {
+      const response = await fetch(file.file_url)
+      const blob = await response.blob()
+
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `${file.file_name}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(a.href)
+    } catch (error) {
+      console.error('Download failed', error)
+    }
+  }
 
   return (
     <>
@@ -36,9 +53,15 @@ export default function MessageBubble({
               />
             )}
             {message.type === 'file' && (
-              <div className='flex items-center gap-2'>
-                <File size={20} />
-                <span>{message.file_name || message.content || 'File'}</span>
+              <div
+                key={message.file_url}
+                onClick={() => handleDownloadFile?.(message)}
+                className='flex items-center gap-2 cursor-pointer select-none'
+              >
+                <File size={16} className='text-white flex-shrink-0' />
+                <span className='text-white underline hover:text-gray-300 text-sm'>
+                  {message.file_name || message.content || 'File'}
+                </span>
               </div>
             )}
           </div>

@@ -39,6 +39,23 @@ export default function SettingsPanel({
     setSelectedImageIndex(index)
   }
 
+  const handleDownloadFile = async (file: MediaFile) => {
+    try {
+      const response = await fetch(file.url)
+      const blob = await response.blob()
+
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `${file.name}` // tên mong muốn
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(a.href)
+    } catch (error) {
+      console.error('Download failed', error)
+    }
+  }
+
   const handlePrevImage = () => {
     if (selectedImageIndex !== null && selectedImageIndex > 0) {
       setSelectedImageIndex(selectedImageIndex - 1)
@@ -139,10 +156,9 @@ export default function SettingsPanel({
         {activeTab === 'files' && (
           <div className='space-y-2'>
             {files.map((file) => (
-              <a
+              <div
                 key={file.media_file_id}
-                href={file.url}
-                download={file.name}
+                onClick={() => handleDownloadFile(file)}
                 className='flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer'
               >
                 <File size={24} className='text-gray-600' />
@@ -151,7 +167,7 @@ export default function SettingsPanel({
                   <p className='text-xs text-gray-500'>{formatTime(file.timestamp)}</p>
                 </div>
                 <Download size={20} className='text-gray-600' />
-              </a>
+              </div>
             ))}
             {files.length === 0 && <p className='text-center text-gray-500 py-8'>Chưa có file nào</p>}
           </div>

@@ -13,6 +13,7 @@ import StatusLabel from '../../../../components/StatusLabel'
 import Priority from '../../../../components/Priority'
 import Avatar from '../../../../components/Avatar'
 import OverlayCenterModal from '../../../../components/OverlayCenterModal'
+import { useProjectRole } from '../../hooks/useProjectRole'
 
 export interface TaskCardProps {
   task: Task
@@ -29,6 +30,8 @@ export default function TaskCard({ task, isDragging = false, setReloadKey, onTas
   const [deleteModalContent, setDeleteModalContent] = useState<React.ReactNode | null>(null)
 
   const [selectTask, setSelectTask] = useState<number | null>(0)
+
+  const { permissions } = useProjectRole()
 
   const getTypeIcon = () => {
     const found = type.find((t) => t.value === task.type)
@@ -71,7 +74,9 @@ export default function TaskCard({ task, isDragging = false, setReloadKey, onTas
     )
   }
 
-  const items = [{ label: 'Xóa công việc', icon: 'pi pi-trash', command: () => handleDelete(task) }]
+  const items = permissions.canDelete
+    ? [{ label: 'Xóa công việc', icon: 'pi pi-trash', command: () => handleDelete(task) }]
+    : []
 
   return (
     <div

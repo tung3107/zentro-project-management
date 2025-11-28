@@ -22,6 +22,10 @@ Chat.init(
       type: DataTypes.STRING(20),
       defaultValue: "#cb0404",
     },
+    is_ai: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     chat_avatar: { type: DataTypes.TEXT },
     created_by: { type: DataTypes.STRING(35) },
     created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },

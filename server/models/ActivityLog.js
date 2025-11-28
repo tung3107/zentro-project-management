@@ -26,6 +26,7 @@ ActivityLog.init(
         key: "user_id",
       },
     },
+
     entity_type: {
       type: DataTypes.ENUM("task", "project", "comment", "workflow", "sprint"),
       allowNull: false,
@@ -34,18 +35,39 @@ ActivityLog.init(
       type: DataTypes.STRING(50),
       allowNull: true,
     },
-    action: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
+
+    action_type: {
+      type: DataTypes.ENUM(
+        "create",
+        "update",
+        "delete",
+        "assign",
+        "change_status",
+        "complete",
+        "start",
+        "finish",
+        "link",
+        "unlink"
+      ),
+      allowNull: false,
     },
+
     old_value: {
-      type: DataTypes.TEXT,
+      type: DataTypes.JSON,
       allowNull: true,
     },
     new_value: {
-      type: DataTypes.TEXT,
+      type: DataTypes.JSON,
       allowNull: true,
     },
+
+    message_template: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment:
+        "Ví dụ: '{{user}} đã thay đổi {{entity_type}} {{entity_code}} từ {{old}} thành {{new}}'",
+    },
+
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,

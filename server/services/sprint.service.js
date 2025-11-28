@@ -1,9 +1,12 @@
-const { where } = require("sequelize");
+const { where, Op } = require("sequelize");
 const { sequelize } = require("../config/database");
 const Project = require("../models/Project");
 const Sprint = require("../models/Sprint");
 const Task = require("../models/Task");
+const ActivityLog = require("../models/ActivityLog");
 const ApiError = require("../utils/ApiError");
+const ProjectStatus = require("../models/ProjectStatus");
+const notificationService = require("./notification.service");
 
 class SprintService {
   async getCurrentSprintDetails(project_id) {
@@ -67,7 +70,7 @@ class SprintService {
     }
   }
 
-  async createSprint_planned_status(body) {
+  async createSprint_planned_status(user_id, body) {
     try {
       const findProject = await Project.findByPk(body.project_id);
 
@@ -81,6 +84,22 @@ class SprintService {
 
       const data = await Sprint.create(body);
 
+      await ActivityLog.create({
+        project_id: data.project_id,
+        user_id: user_id,
+        entity_type: "sprint",
+        entity_id: data.sprint_id,
+        action_type: "create",
+        old_value: null,
+        new_value: {
+          sprint_id: data.sprint_id,
+          name: data.name,
+          start_date: data.start_date,
+          end_date: data.end_date,
+        },
+        message_template: "đã tạo sprint {{entity_id}}",
+      });
+
       return data;
     } catch (error) {
       if (error instanceof ApiError) {
@@ -91,22 +110,49 @@ class SprintService {
     }
   }
 
-  async startSprint(sprint_id, body) {
+  async startSprint(user_id, sprint_id, body) {
     try {
       const result = await Sprint.findByPk(sprint_id);
 
       if (!result) throw new ApiError("Sprint kkhông tồn tại", 400);
 
-      const isActiveSprintExist = await Sprint.findOne({
-        where: { project_id: body.project_id, sprint_id },
+      const existingActiveSprint = await Sprint.findOne({
+        where: {
+          project_id: body.project_id,
+          status: "active",
+          sprint_id: { [Op.ne]: sprint_id },
+        },
       });
 
-      if (isActiveSprintExist)
-        throw new ApiError("Chỉ được bắt đầu 1 sprint trong 1 thời điểm", 400);
-
+      if (existingActiveSprint) {
+        throw new ApiError(
+          "Chỉ được phép có 1 giai đoạn đang chạy trong 1 dự án!",
+          400
+        );
+      }
       const data = { ...body, status: "active" };
-
       await Sprint.update(data, { where: { sprint_id: sprint_id } });
+
+      await ActivityLog.create({
+        project_id: result.project_id,
+        user_id: user_id,
+        entity_type: "sprint",
+        entity_id: sprint_id,
+        action_type: "start",
+        old_value: null,
+        new_value: {
+          sprint_id: sprint_id,
+          name: result.name,
+        },
+        message_template: "đã bắt đầu sprint {{entity_id}}",
+      });
+
+      // Send notification to project members
+      await notificationService.notifySprintStarted(
+        sprint_id,
+        result.project_id,
+        user_id
+      );
 
       return "Start sprint thành công";
     } catch (error) {
@@ -118,17 +164,131 @@ class SprintService {
     }
   }
 
-  async completeSprint(sprint_id, body) {
+  async checkCompleteSprint(sprint_id) {
+    try {
+      const result = await Sprint.findByPk(sprint_id);
+      if (!result) throw new ApiError("Sprint không tồn tại", 400);
+
+      const tasks = await Task.findAll({
+        where: { sprint_id: sprint_id },
+        include: [
+          {
+            model: ProjectStatus,
+            as: "status",
+            attributes: ["status_id", "name"],
+          },
+          {
+            model: Task, // subtask
+            as: "subtasks",
+            include: [
+              {
+                model: ProjectStatus,
+                as: "status",
+                attributes: ["status_id", "name"],
+              },
+            ],
+          },
+        ],
+      });
+
+      const flattenTasks = (taskList) => {
+        return taskList.map((task) => ({
+          task_id: task.task_id,
+          title: task.title,
+          type: task.type,
+          assignee: task.assignee,
+          status: task.status,
+          subtasks:
+            task.subtasks?.map((sub) => ({
+              task_id: sub.task_id,
+              title: sub.title,
+              type: sub.type,
+              assignee: sub.assignee,
+              status: sub.status,
+            })) || [],
+        }));
+      };
+
+      const allTasks = flattenTasks(tasks);
+
+      const completedTasks = allTasks.filter(
+        (task) => task.status.name === "Hoàn thành"
+      );
+      const incompleteTasks = allTasks.filter(
+        (task) => task.status.name !== "Hoàn thành"
+      );
+
+      return { completedTasks, incompleteTasks };
+    } catch (error) {
+      throw new ApiError(`Error: ${error.message}`, 400);
+    }
+  }
+
+  async completeSprint(user_id, sprint_id, incompleteTasks = []) {
     try {
       const result = await Sprint.findByPk(sprint_id);
 
-      if (!result) throw new ApiError("Sprint kkhông tồn tại", 400);
+      if (!result) throw new ApiError("Sprint không tồn tại", 400);
 
-      const data = { ...body, status: "active" };
+      const data = { status: "completed" };
 
-      await Sprint.update(data, { where: { sprint_id: sprint_id } });
+      // Use transaction to ensure all operations succeed or fail together
+      await sequelize.transaction(async (t) => {
+        // Update sprint status
+        await Sprint.update(data, {
+          where: { sprint_id: sprint_id },
+          transaction: t,
+        });
 
-      return "Start sprint thành công";
+        // Handle incomplete tasks
+        if (incompleteTasks && incompleteTasks.length > 0) {
+          for (const taskAction of incompleteTasks) {
+            const { taskId, action, targetSprintId } = taskAction;
+
+            if (action === "backlog") {
+              // Move to backlog (sprint_id = null)
+              await Task.update(
+                { sprint_id: null },
+                { where: { task_id: taskId }, transaction: t }
+              );
+            } else if (action === "nextSprint" && targetSprintId) {
+              // Move to another sprint
+              await Task.update(
+                { sprint_id: targetSprintId },
+                { where: { task_id: taskId }, transaction: t }
+              );
+            }
+          }
+        }
+
+        // Log activity
+        await ActivityLog.create(
+          {
+            project_id: result.project_id,
+            user_id: user_id,
+            entity_type: "sprint",
+            entity_id: sprint_id,
+            action_type: "complete",
+            old_value: null,
+            new_value: {
+              sprint_id: sprint_id,
+              name: result.name,
+              incompleteTasksCount: incompleteTasks.length,
+            },
+            message_template: "đã hoàn thành sprint {{entity_id}}",
+          },
+          { transaction: t }
+        );
+      });
+
+      // Send notification to project members
+      await notificationService.notifySprintCompleted(
+        sprint_id,
+        result.project_id,
+        user_id
+      );
+
+      return "Complete sprint thành công";
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;

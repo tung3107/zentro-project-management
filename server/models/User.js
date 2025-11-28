@@ -30,7 +30,7 @@ User.init(
       defaultValue: false,
     },
     email: {
-      type: DataTypes.CHAR(50),
+      type: DataTypes.STRING(50),
       allowNull: true,
       unique: {
         args: true,

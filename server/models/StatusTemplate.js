@@ -21,6 +21,12 @@ StatusTemplate.init(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+    background: {
+      type: DataTypes.STRING(20),
+    },
+    border_color: {
+      type: DataTypes.STRING(20),
+    },
   },
   {
     sequelize,

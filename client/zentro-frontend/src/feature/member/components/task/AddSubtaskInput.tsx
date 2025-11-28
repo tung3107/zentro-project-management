@@ -5,11 +5,18 @@ import api from '../../../../util/axiosClient'
 interface AddSubtaskInputProps {
   parentTaskId: number
   projectId: string
+  sprintId: number
   onAdded?: () => void
   onCancel?: () => void
 }
 
-export default function AddSubtaskInput({ parentTaskId, projectId, onAdded, onCancel }: AddSubtaskInputProps) {
+export default function AddSubtaskInput({
+  parentTaskId,
+  projectId,
+  sprintId,
+  onAdded,
+  onCancel
+}: AddSubtaskInputProps) {
   const [title, setTitle] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [firstStatusId, setFirstStatusId] = useState<number | null>(null)
@@ -38,6 +45,7 @@ export default function AddSubtaskInput({ parentTaskId, projectId, onAdded, onCa
         parent_id: parentTaskId.toString(),
         project_id: projectId,
         title: title.trim(),
+        sprint_id: sprintId,
         type: 'subtask',
         priority: 0, // Lowest priority
         assignee_id: undefined,

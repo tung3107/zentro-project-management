@@ -29,4 +29,9 @@ export interface Task {
     name: string
     color: string
   }
+  links?: Array<{
+    task_id: string
+    linked_task_id: string
+    linkedTask: Task
+  }>
 }

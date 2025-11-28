@@ -12,6 +12,10 @@ const User = require("../models/User");
 const ApiError = require("../utils/ApiError");
 const { sequelize } = require("../config/database");
 const Sprint = require("../models/Sprint");
+const ActivityLog = require("../models/ActivityLog");
+const TaskLink = require("../models/TaskLink");
+const notificationService = require("./notification.service");
+const { getIO } = require("../socket");
 
 class TaskService {
   async updateOneTask(task_id, user_id, body) {
@@ -31,7 +35,118 @@ class TaskService {
         );
       }
 
+      // Validate status change for parent tasks with subtasks
+      if (body.status_id && body.status_id !== task.status_id) {
+        // Check if this task has subtasks (not a subtask itself)
+        const subtasks = await Task.findAll({
+          where: { parent_id: task_id },
+        });
+
+        if (subtasks.length > 0) {
+          // Get the new status to check if it's a "completed" status
+          const newStatus = await ProjectStatus.findByPk(body.status_id);
+          if (newStatus) {
+            const statusName = newStatus.name.toLowerCase();
+            const isCompletedStatus =
+              statusName.includes("hoàn thành") ||
+              statusName.includes("done") ||
+              statusName.includes("complete") ||
+              statusName.includes("closed");
+
+            if (isCompletedStatus) {
+              // Check if all subtasks are completed
+              const subtasksWithStatus = await Task.findAll({
+                where: { parent_id: task_id },
+                include: [
+                  {
+                    model: ProjectStatus,
+                    as: "status",
+                    attributes: ["status_id", "name"],
+                  },
+                ],
+              });
+
+              const incompleteSubtasks = subtasksWithStatus.filter(
+                (subtask) => {
+                  if (!subtask.status) return true;
+                  const subtaskStatusName = subtask.status.name.toLowerCase();
+                  return !(
+                    subtaskStatusName.includes("hoàn thành") ||
+                    subtaskStatusName.includes("done") ||
+                    subtaskStatusName.includes("complete") ||
+                    subtaskStatusName.includes("closed")
+                  );
+                }
+              );
+
+              if (incompleteSubtasks.length > 0) {
+                throw new ApiError(
+                  `Không thể chuyển trạng thái sang hoàn thành. Bạn cần hoàn thành tất cả ${incompleteSubtasks.length} công việc con trước.`,
+                  400
+                );
+              }
+            }
+          }
+        }
+      }
+
       await Task.update(body, { where: { task_id: task_id } });
+
+      const newTask = await Task.findByPk(task_id);
+
+      const changedFields = {};
+      for (const key of Object.keys(body)) {
+        let oldValue = task[key];
+        let newValue = newTask[key];
+        if (oldValue instanceof Date) oldValue = oldValue.toISOString();
+        if (newValue instanceof Date) newValue = newValue.toISOString();
+
+        if (oldValue !== newValue) {
+          changedFields[key] = { old: oldValue, new: newValue };
+        }
+      }
+
+      if (Object.keys(changedFields).length > 0) {
+        await ActivityLog.create({
+          project_id: newTask.project_id,
+          user_id,
+          entity_type: "task",
+          entity_id: task_id,
+          action_type: "update",
+          old_value: Object.fromEntries(
+            Object.entries(changedFields).map(([k, v]) => [k, v.old])
+          ),
+          new_value: Object.fromEntries(
+            Object.entries(changedFields).map(([k, v]) => [k, v.new])
+          ),
+          message_template:
+            "đã thay đổi {{field}} của {{entity_type}} {{entity_id}} từ {{old}} thành {{new}}",
+        });
+
+        // Send notification if assignee changed
+        if (changedFields.assignee_id) {
+          await notificationService.notifyTaskAssigned(
+            task_id,
+            changedFields.assignee_id.new,
+            user_id,
+            newTask.project_id
+          );
+        }
+      }
+
+      const updatedTask = await Task.findByPk(task_id, {
+    include: [
+      { model: User, as: 'assignee', attributes: ['user_id', 'first_name', 'last_name', 'avatar'] },
+      { model: ProjectStatus, as: 'status', attributes: ['status_id', 'name', 'color'] },
+      { model: Sprint, as: 'sprint', attributes: ['sprint_id', 'name'] },
+    ]
+  });
+  
+  // ✅ Emit socket event
+  const io = getIO();
+  io.to(`project_${updatedTask.project_id}`).emit('task:updated', updatedTask);
+
+      
 
       return "Sửa thành công thành công";
     } catch (err) {
@@ -123,6 +238,30 @@ class TaskService {
             ],
             order: [["created_at", "ASC"]],
           },
+          {
+            model: TaskLink,
+            as: "links",
+            include: [
+              {
+                model: Task,
+                as: "linkedTask",
+                attributes: [
+                  "task_id",
+                  "title",
+                  "type",
+                  "status_id",
+                  "priority",
+                ],
+                include: [
+                  {
+                    model: ProjectStatus,
+                    as: "status",
+                    attributes: ["status_id", "name", "color"],
+                  },
+                ],
+              },
+            ],
+          },
         ],
       });
 
@@ -160,13 +299,18 @@ class TaskService {
 
   async getBackLog_TaskBySprint(user_id, project_id) {
     try {
-      const result = {};
-
       const isMember = await Member.findOne({
         where: { user_id: user_id, project_id: project_id },
       });
 
-      if (!isMember) {
+      const isAdmin = await User.findOne({
+        where: { user_id: user_id },
+        include: [
+          { model: Role, where: { role_name: { [Op.like]: "%Admin%" } } },
+        ],
+      });
+
+      if (!isMember && !isAdmin) {
         throw new ApiError(
           `Bạn không có quyền truy cập vào trang web này`,
           403
@@ -175,17 +319,24 @@ class TaskService {
       //// Lay task backlog
       const backlog = await Task.findAll({
         where: {
+          project_id: project_id,
           sprint_id: null,
-          type: { [Op.ne]: "subtask" }, // Không lấy subtasks
+          type: { [Op.ne]: "subtask" },
         },
         order: [["created_at", "ASC"]],
         include: [
           {
             model: User,
             as: "assignee",
+            required: false,
             attributes: [
               [
-                fn("CONCAT", col("first_name"), " ", col("last_name")),
+                fn(
+                  "CONCAT",
+                  col("assignee.first_name"),
+                  " ",
+                  col("assignee.last_name")
+                ),
                 "assignee_name",
               ],
               "email",
@@ -206,11 +357,12 @@ class TaskService {
 
       /// Lay sprints
       const sprints = await Sprint.findAll({
-        where: { project_id: project_id },
+        where: { project_id: project_id, status: { [Op.ne]: "completed" } },
         include: [
           {
             model: Task,
             as: "tasks",
+            required: false,
             where: {
               type: { [Op.ne]: "subtask" }, // Không lấy subtasks
             },
@@ -262,7 +414,14 @@ class TaskService {
         where: { user_id, project_id },
       });
 
-      if (!isMember) {
+      const isAdmin = await User.findOne({
+        where: { user_id: user_id },
+        include: [
+          { model: Role, where: { role_name: { [Op.like]: "%Admin%" } } },
+        ],
+      });
+
+      if (!isMember && !isAdmin) {
         throw new ApiError(
           `Bạn không có quyền truy cập vào trang web này`,
           403
@@ -272,6 +431,7 @@ class TaskService {
       // 👇 Tạo điều kiện where động
       const backlogWhere = {
         sprint_id: null,
+        project_id: project_id,
         type: { [Op.ne]: "subtask" }, // Không lấy subtasks
         ...(query ? { title: { [Op.like]: `%${query}%` } } : {}), // chỉ thêm điều kiện nếu có query
       };
@@ -307,6 +467,8 @@ class TaskService {
       // 🧠 Tạo điều kiện where cho Sprint.tasks
       const sprintTaskWhere = {
         type: { [Op.ne]: "subtask" }, // Không lấy subtasks
+        project_id: project_id,
+        status: { [Op.ne]: "completed" },
         ...(query ? { title: { [Op.like]: `%${query}%` } } : {}), // Nếu query rỗng thì không lọc theo title
       };
 
@@ -372,6 +534,25 @@ class TaskService {
       }
 
       const data = await Task.create(body);
+
+      await ActivityLog.create({
+        project_id: body.project_id,
+        user_id: user_id,
+        entity_type: "task",
+        entity_id: data.task_id,
+        action_type: "create",
+        old_value: null,
+        new_value: {
+          task_id: data.task_id,
+          title: data.title,
+          type: data.type,
+          priority: data.priority,
+          status_id: data.status_id,
+          assignee_id: data.assignee_id,
+          sprint_id: data.sprint_id,
+        },
+        message_template: "đã tạo {{entity_type}} {{entity_id}}",
+      });
 
       return data;
     } catch (err) {
@@ -446,7 +627,14 @@ class TaskService {
         where: { user_id: user_id, project_id: project_id },
       });
 
-      if (!isMember) {
+      const isAdmin = await User.findOne({
+        where: { user_id: user_id },
+        include: [
+          { model: Role, where: { role_name: { [Op.like]: "%Admin%" } } },
+        ],
+      });
+
+      if (!isMember && !isAdmin) {
         throw new ApiError(
           `Bạn không có quyền truy cập vào trang web này`,
           403
@@ -520,7 +708,14 @@ class TaskService {
         where: { user_id: user_id, project_id: project_id },
       });
 
-      if (!isMember) {
+      const isAdmin = await User.findOne({
+        where: { user_id: user_id },
+        include: [
+          { model: Role, where: { role_name: { [Op.like]: "%Admin%" } } },
+        ],
+      });
+
+      if (!isMember && !isAdmin) {
         throw new ApiError(
           `Bạn không có quyền truy cập vào trang web này`,
           403
@@ -663,6 +858,10 @@ class TaskService {
 
       // Calculate remaining work per day
       const burndownData = [];
+      const currentDayIndex = Math.floor(
+        (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
       for (let day = 0; day <= totalDays; day++) {
         const currentDate = new Date(startDate);
         currentDate.setDate(currentDate.getDate() + day);
@@ -676,33 +875,28 @@ class TaskService {
           totalEstimate - idealBurndownPerDay * day
         );
 
-        // Actual remaining work (tasks not completed)
-        // For simplicity, we'll calculate based on current state
-        // In a real app, you'd track daily completion
-        const completedTasks = tasks.filter((t) => {
-          const statusName = statusMap[t.status_id]?.toLowerCase() || "";
-          return statusName.includes("hoàn thành");
-        });
+        // Actual remaining work (only show for today)
+        // Note: Without historical status tracking, we can only show current state
+        let actualValue = null;
 
-        const completedEstimate = completedTasks.reduce(
-          (sum, task) => sum + (task.estimate || 0),
-          0
-        );
-        const actualRemaining = totalEstimate - completedEstimate;
+        if (day === currentDayIndex || day === 0) {
+          const completedTasks = tasks.filter((t) => {
+            const statusName = statusMap[t.status_id]?.toLowerCase() || "";
+            return statusName.includes("hoàn thành");
+          });
+
+          const completedEstimate = completedTasks.reduce(
+            (sum, task) => sum + (task.estimate || 0),
+            0
+          );
+          const actualRemaining = totalEstimate - completedEstimate;
+          actualValue = Math.round(actualRemaining * 10) / 10;
+        }
 
         burndownData.push({
           date: currentDate.toISOString().split("T")[0],
           ideal: Math.round(idealRemaining * 10) / 10,
-          actual:
-            day ===
-            Math.min(
-              totalDays,
-              Math.ceil(
-                (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-              )
-            )
-              ? Math.round(actualRemaining * 10) / 10
-              : null, // Only show actual for current day
+          actual: actualValue,
         });
       }
 
@@ -819,6 +1013,288 @@ class TaskService {
       } else {
         throw new ApiError(`Error: ${error.message}`, 400);
       }
+    }
+  }
+
+  /**
+   * Get tasks for list view - includes parent tasks with their subtasks
+   * @param {string} user_id - User ID
+   * @param {string} project_id - Project ID
+   * @param {string} search - Optional search query
+   * @param {Object} filters - Optional filters (status_id, assignee_id)
+   * @returns {Array} Tasks with subtasks for list view
+   */
+  async getTasksForListView(user_id, project_id, search, filters = {}) {
+    try {
+      const isMember = await Member.findOne({
+        where: { user_id: user_id, project_id: project_id },
+      });
+
+      const isAdmin = await User.findOne({
+        where: { user_id: user_id },
+        include: [
+          { model: Role, where: { role_name: { [Op.like]: "%Admin%" } } },
+        ],
+      });
+
+      if (!isMember && !isAdmin) {
+        throw new ApiError(
+          `Bạn không có quyền truy cập vào trang web này`,
+          403
+        );
+      }
+
+      // Build where clause for parent tasks (non-subtasks)
+      const taskWhere = {
+        project_id: project_id,
+        type: { [Op.ne]: "subtask" },
+        parent_id: null,
+      };
+
+      // Add search query
+      if (search && search.trim()) {
+        taskWhere.title = { [Op.like]: `%${search.trim()}%` };
+      }
+
+      // Add filters
+      if (filters.status_id) {
+        taskWhere.status_id = filters.status_id;
+      }
+      if (filters.assignee_id) {
+        taskWhere.assignee_id = filters.assignee_id;
+      }
+      if (filters.type) {
+        taskWhere.type = filters.type;
+      }
+
+      // Get parent tasks with their subtasks
+      const tasks = await Task.findAll({
+        where: taskWhere,
+        include: [
+          {
+            model: User,
+            as: "assignee",
+            attributes: [
+              "user_id",
+              "first_name",
+              "last_name",
+              "avatar",
+              "email",
+            ],
+          },
+          {
+            model: ProjectStatus,
+            as: "status",
+            attributes: ["status_id", "name", "color"],
+          },
+          {
+            model: Task,
+            as: "subtasks",
+            include: [
+              {
+                model: User,
+                as: "assignee",
+                attributes: [
+                  "user_id",
+                  "first_name",
+                  "last_name",
+                  "avatar",
+                  "email",
+                ],
+              },
+              {
+                model: ProjectStatus,
+                as: "status",
+                attributes: ["status_id", "name", "color"],
+              },
+            ],
+            order: [["created_at", "ASC"]],
+          },
+        ],
+        order: [["created_at", "DESC"]],
+      });
+
+      return tasks;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      } else {
+        throw new ApiError(`Error: ${error.message}`, 400);
+      }
+    }
+  }
+
+  async searchTasksForMention(user_id, project_id, query) {
+    try {
+      const isMember = await Member.findOne({
+        where: { user_id: user_id, project_id: project_id },
+      });
+
+      if (!isMember) {
+        throw new ApiError(
+          `Bạn không có quyền truy cập vào trang web này`,
+          403
+        );
+      }
+
+      const taskWhere = {
+        project_id: project_id,
+        type: { [Op.ne]: "subtask" },
+      };
+
+      if (query && query.trim()) {
+        taskWhere[Op.or] = [
+          { title: { [Op.like]: `%${query.trim()}%` } },
+          { task_id: { [Op.like]: `%${query.trim()}%` } },
+        ];
+      }
+
+      const tasks = await Task.findAll({
+        where: taskWhere,
+        attributes: ["task_id", "title", "type", "status_id"],
+        include: [
+          {
+            model: ProjectStatus,
+            as: "status",
+            attributes: ["name"],
+          },
+        ],
+        limit: 10,
+        order: [["created_at", "DESC"]],
+      });
+
+      return tasks;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      } else {
+        throw new ApiError(`Error: ${error.message}`, 400);
+      }
+    }
+  }
+
+  /**
+   * Tạo link giữa 2 task
+   * @param {string} task_id - Task chính
+   * @param {string} linked_task_id - Task muốn link tới
+   * @param {string} user_id - ID người thao tác
+   */
+  async createTaskLink(task_id, linked_task_id, user_id) {
+    try {
+      if (task_id === linked_task_id) {
+        throw new ApiError("Không thể link task với chính nó", 400);
+      }
+
+      const task = await Task.findByPk(task_id);
+      const linkedTask = await Task.findByPk(linked_task_id);
+
+      if (!task || !linkedTask) {
+        throw new ApiError("Task không tồn tại", 400);
+      }
+
+      // Kiểm tra quyền user
+      const isMember = await Member.findOne({
+        where: { user_id, project_id: task.project_id },
+      });
+
+      if (!isMember) {
+        throw new ApiError("Bạn không có quyền thao tác trên task này", 403);
+      }
+
+      // Check nếu link đã tồn tại (cả 2 chiều)
+      const existing = await TaskLink.findOne({
+        where: {
+          [Op.or]: [
+            { task_id: task_id, linked_task_id: linked_task_id },
+            { task_id: linked_task_id, linked_task_id: task_id },
+          ],
+        },
+      });
+
+      if (existing) {
+        throw new ApiError("Task đã được liên kết", 400);
+      }
+
+      // Tạo link bidirectional (2 chiều)
+      await TaskLink.bulkCreate([
+        { task_id, linked_task_id },
+        { task_id: linked_task_id, linked_task_id: task_id },
+      ]);
+
+      // Ghi log hoạt động
+      await ActivityLog.create({
+        project_id: task.project_id,
+        user_id,
+        entity_type: "task",
+        entity_id: task_id,
+        action_type: "link",
+        old_value: null,
+        new_value: { linked_task_id },
+        message_template:
+          "đã liên kết task {{entity_id}} với task {{linked_task_id}}",
+      });
+
+      return { message: "Tạo liên kết thành công", task_id, linked_task_id };
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
+      throw new ApiError(`Error: ${err.message}`, 400);
+    }
+  }
+
+  /**
+   * Xóa link giữa 2 task
+   * @param {string} task_id - Task chính
+   * @param {string} linked_task_id - Task muốn xóa link
+   * @param {string} user_id - ID người thao tác
+   */
+  async deleteTaskLink(task_id, linked_task_id, user_id) {
+    try {
+      const task = await Task.findByPk(task_id);
+
+      if (!task) {
+        throw new ApiError("Task không tồn tại", 400);
+      }
+
+      // Kiểm tra quyền user
+      const isMember = await Member.findOne({
+        where: { user_id, project_id: task.project_id },
+      });
+
+      if (!isMember) {
+        throw new ApiError("Bạn không có quyền thao tác trên task này", 403);
+      }
+
+      // Xóa link bidirectional (cả 2 chiều)
+      const deleted = await TaskLink.destroy({
+        where: {
+          [Op.or]: [
+            { task_id, linked_task_id },
+            { task_id: linked_task_id, linked_task_id: task_id },
+          ],
+        },
+      });
+
+      if (!deleted) {
+        throw new ApiError("Link task không tồn tại", 400);
+      }
+
+      // Ghi log hoạt động
+      await ActivityLog.create({
+        project_id: task.project_id,
+        user_id,
+        entity_type: "task",
+        entity_id: task_id,
+        action_type: "unlink",
+        old_value: { linked_task_id },
+        new_value: null,
+        message_template:
+          "đã xóa liên kết giữa task {{entity_id}} và task {{linked_task_id}}",
+      });
+
+      return "Xóa link thành công";
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
+      throw new ApiError(`Error: ${err.message}`, 400);
     }
   }
 }

@@ -84,3 +84,46 @@ export const deleteSubtaskAPI = async (task_id: number) => {
   const response = await api.delete(`/tasks/${task_id}`)
   return response.data
 }
+
+export const getTasksListAPI = async (
+  project_id: string,
+  search?: string,
+  filters?: {
+    status_id?: number
+    assignee_id?: string
+    type?: string
+  }
+) => {
+  const params = new URLSearchParams()
+  if (search) params.append('search', search)
+  if (filters?.status_id) params.append('status_id', filters.status_id.toString())
+  if (filters?.assignee_id) params.append('assignee_id', filters.assignee_id)
+  if (filters?.type) params.append('type', filters.type)
+
+  const response = await api.get(`/tasks/list/${project_id}?${params.toString()}`)
+  return response.data
+}
+
+export const getActivityForTask = async (project_id: string, task_id: string): Promise<any> => {
+  const response = await api.get(`/activitylogs/${project_id}/task/${task_id}`)
+  return response.data
+}
+
+// Task Link APIs
+export const createTaskLinkAPI = async (task_id: number, linked_task_id: number) => {
+  const response = await api.post(`/tasks/${task_id}/link`, { task_id, linked_task_id })
+  return response.data
+}
+
+export const deleteTaskLinkAPI = async (task_id: number, linked_task_id: number) => {
+  const response = await api.delete(`/tasks/${task_id}/link`, { data: { task_id, linked_task_id } })
+  return response.data
+}
+
+export const searchTasksForMentionAPI = async (project_id: string, query?: string) => {
+  const params = new URLSearchParams()
+  if (query) params.append('q', query)
+
+  const response = await api.get(`/tasks/search/mention/${project_id}?${params.toString()}`)
+  return response.data
+}

@@ -15,11 +15,15 @@ import ResetPasswordFirstLogin from './feature/auth/pages/ResetPasswordFirstLogi
 import Role from './feature/admin/pages/Role'
 import Dashboard from './feature/member/pages/Dashboard'
 import ProjectViewModal from './feature/admin/pages/ProjectViewModal'
-import Test from './feature/auth/components/Test'
 import GuestRoute from './util/GuestRoute'
 import ProjectView from './feature/member/pages/ProjectView'
 import Chat from './feature/member/pages/Chat'
+import Profile from './feature/member/pages/Profile'
+import ProfileEdit from './feature/member/pages/ProfileEdit'
+import Settings from './feature/member/pages/Settings'
 import MemberMainLayout from './feature/member/components/layout/MemberMainLayout'
+import AiChatbot from './feature/member/components/ai_chatbot/AiChatbot'
+import HomePage from './feature/member/pages/HomePage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -113,8 +117,14 @@ function App() {
                 </ProtectedRoute>
               }
             >
+              <Route index element={<HomePage />} />
               <Route path='chat' element={<Chat />} />
+              <Route path='profile' element={<Profile />} />
+              <Route path='profile/edit' element={<ProfileEdit />} />
+              <Route path='profile/:userId' element={<Profile />} />
+              <Route path='settings' element={<Settings />} />
               <Route path='projects/:projectId/*' element={<ProjectView />} />
+              <Route path='ai-chatbot' element={<AiChatbot />} />
             </Route>
 
             <Route path='*' element={<NotFoundPage />} />

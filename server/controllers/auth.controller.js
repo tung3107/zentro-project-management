@@ -66,6 +66,82 @@ exports.authorize = (resource, action) => {
   };
 };
 
+// Project-level authorization middleware
+exports.authorizeProject = (resource, action) => {
+  return async (req, res, next) => {
+    const userId = req.user.user_id;
+    const roleId = req.user.role_id;
+
+    // Get project_id from params or body
+    const projectId = req.params.project_id || req.body.project_id;
+
+    if (!projectId) {
+      throw new ApiError("Project ID is required", 400);
+    }
+
+    if (req.user.is_change_password) {
+      throw new ApiError("Bạn cần đổi mật khẩu trước khi sử dụng", 403);
+    }
+
+    // Check system role permission first (for admins)
+    const hasSystemPermission = await Role.findOne({
+      where: { role_id: roleId },
+      include: [
+        {
+          model: Permission,
+          as: "permissions",
+          through: { attributes: [] },
+          required: true,
+          attributes: [],
+          where: { resource, action },
+        },
+      ],
+      attributes: ["role_id"],
+      raw: true,
+    });
+
+    if (hasSystemPermission) {
+      return next();
+    }
+
+    // Check project-specific role permission
+    const Member = require("../models/Member");
+    const memberData = await Member.findOne({
+      where: {
+        user_id: userId,
+        project_id: projectId,
+        is_delete: 0,
+      },
+      include: [
+        {
+          model: Role,
+          as: "role",
+          attributes: ["role_id"],
+          include: [
+            {
+              model: Permission,
+              as: "permissions",
+              through: { attributes: [] },
+              required: true,
+              attributes: [],
+              where: { resource, action },
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!memberData) {
+      throw new ApiError(
+        "Forbidden: You don't have permission in this project",
+        403
+      );
+    }
+
+    next();
+  };
+};
+
 exports.logout = catchAsync(async (req, res, next) => {
   const user_id = req.user.user_id;
 

@@ -5,7 +5,7 @@ import { refreshTokenAPI } from '../feature/auth/services/auth.service'
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_REACT_API_URL as string, // ép kiểu rõ ràng
-  timeout: 100000 // 60s
+  timeout: 600000 // 60s
 })
 
 // Kiểu trả về là string | null

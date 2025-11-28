@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { X, Trash2, Check } from 'lucide-react'
+import { X, Trash2, Check, Sparkles } from 'lucide-react'
 import { priorityColors, type, type TypeOption } from '../../../../types/type'
 import type { Task } from '../../../../types/task'
 import Dropdown from '../../../../components/Dropdown'
@@ -12,6 +12,14 @@ import CommentSection from '../comment/CommentSection'
 import { getOneTaskAPI, updateTaskAPI } from '../../service/task.service'
 import { useParams, useSearchParams } from 'react-router-dom'
 import SubtaskList from './SubtaskList'
+import { formatTime } from '../../../../util/helper'
+import LinkedTasksSection from './LinkedTasksSection'
+import { useProjectRole } from '../../hooks/useProjectRole'
+import { toast } from 'sonner'
+import type { AxiosError } from 'axios'
+import type { ApiErrorResponse } from '../../../auth/hooks/useAuth'
+import AIDescriptionButton from './AIDescriptionButton'
+import AITaskSummaryModal from './AITaskSummaryModal'
 
 const InputNumber = ({ value, onValueChange, placeholder, className }: any) => (
   <input
@@ -42,6 +50,7 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
 
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(true)
+  const [showAISummary, setShowAISummary] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   const { projectId } = useParams()
@@ -49,6 +58,8 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
   const taskId = searchParams.get('task')
 
   const { user } = useAuthStore()
+
+  const { permissions } = useProjectRole()
 
   useEffect(() => {
     if (!isOpen || !taskId) return
@@ -85,13 +96,18 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
 
     debounceRef.current = setTimeout(async () => {
       try {
+        if (!permissions.canEdit) {
+          toast.error('Bạn không có quyền chỉnh sửa công việc này')
+          return
+        }
         await updateTaskAPI(updated)
         setSaveState('saved')
         setLastSavedAt(new Date())
         onUpdate?.()
         setTimeout(() => setSaveState('idle'), 2000)
       } catch (err) {
-        console.error('Auto save failed', err)
+        const error = err as AxiosError<ApiErrorResponse>
+        toast.error(error.response?.data.error.message ?? 'Lỗi khi tạo sprint!')
         setSaveState('error')
         setTimeout(() => setSaveState('idle'), 2500)
       }
@@ -117,17 +133,6 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const timeAgo = (d: Date | null) => {
-    if (!d) return ''
-    const diff = Math.floor((Date.now() - d.getTime()) / 1000)
-    if (diff < 5) return 'vừa xong'
-    if (diff < 60) return `${diff}s`
-    const m = Math.floor(diff / 60)
-    if (m < 60) return `${m} phút`
-    const h = Math.floor(m / 60)
-    return `${h} giờ`
   }
 
   const renderSkeleton = () => (
@@ -201,20 +206,33 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
                 </div>
               )}
               {saveState === 'idle' && lastSavedAt && (
-                <div className='text-sm text-gray-500'>{`Đã lưu • ${timeAgo(lastSavedAt)} trước`}</div>
+                <div className='text-sm text-gray-500'>{`Đã lưu • ${formatTime(lastSavedAt)} trước`}</div>
               )}
             </div>
 
             {/* actions */}
             <div className='flex items-center gap-2'>
-              <button
-                onClick={handleDelete}
-                className='p-2 hover:bg-red-50 rounded-md transition-colors'
-                title='Xóa'
-                disabled={isLoading}
-              >
-                <Trash2 size={16} className='text-red-600' />
-              </button>
+              {/* AI Summary Button */}
+              {formData && !isLoading && (
+                <button
+                  onClick={() => setShowAISummary(true)}
+                  className='inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors'
+                  title='Tóm tắt task bằng AI'
+                >
+                  <Sparkles size={16} />
+                  <span>AI Summary</span>
+                </button>
+              )}
+              {permissions.canDelete && (
+                <button
+                  onClick={handleDelete}
+                  className='p-2 hover:bg-red-50 rounded-md transition-colors'
+                  title='Xóa'
+                  disabled={isLoading}
+                >
+                  <Trash2 size={16} className='text-red-600' />
+                </button>
+              )}
               <button onClick={onClose} className='p-2 hover:bg-gray-100 rounded-md transition-colors'>
                 <X size={18} className='text-gray-600' />
               </button>
@@ -244,24 +262,32 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
 
                 {/* Description */}
                 <div className='bg-white rounded-xl border border-gray-200 p-4'>
-                  <button
-                    onClick={() => setIsDescriptionOpen(!isDescriptionOpen)}
-                    className='flex items-center justify-between w-full text-sm font-semibold text-gray-700 mb-3 hover:text-gray-900 transition-colors cursor-pointer'
-                  >
-                    <span>Mô tả</span>
-                    <svg
-                      className={`w-5 h-5 transition-transform ${isDescriptionOpen ? 'rotate-180' : ''}`}
-                      fill='none'
-                      stroke='currentColor'
-                      viewBox='0 0 24 24'
+                  <div className='flex items-center justify-between mb-3'>
+                    <button
+                      onClick={() => setIsDescriptionOpen(!isDescriptionOpen)}
+                      className='flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors cursor-pointer'
                     >
-                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
-                    </svg>
-                  </button>
+                      <span>Mô tả</span>
+                      <svg
+                        className={`w-5 h-5 transition-transform ${isDescriptionOpen ? 'rotate-180' : ''}`}
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
+                      </svg>
+                    </button>
+                    {isDescriptionOpen && projectId && (
+                      <AIDescriptionButton
+                        projectId={projectId}
+                        onDescriptionGenerated={(description) => handleChange('description', description)}
+                      />
+                    )}
+                  </div>
                   {isDescriptionOpen && (
                     <div className='border border-gray-200 rounded-md hover:border-gray-300 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all bg-white'>
                       <DescriptionEditor
-                        placeholder='We support markdown! Try **bold**, `inline code`, or ``` for code blocks.'
+                        placeholder='Nhập mô tả'
                         className='w-full'
                         value={formData?.description}
                         onChange={(val) => handleChange('description', val)}
@@ -273,6 +299,7 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
                 {/* Subtasks Section - Only show if task is not a subtask */}
                 {formData && formData.type !== 'subtask' && !formData.parent_id && (
                   <SubtaskList
+                    sprintId={formData.sprint_id!}
                     subtasks={formData.subtasks || []}
                     parentTaskId={formData.task_id}
                     projectId={projectId || ''}
@@ -301,6 +328,27 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
                       fetchTask()
                     }}
                     onSubtaskDeleted={() => {
+                      const fetchTask = async () => {
+                        try {
+                          const res = await getOneTaskAPI(Number(taskId))
+                          setFormData(res.data)
+                          onUpdate?.()
+                        } catch (err) {
+                          console.error('Lỗi khi lấy task:', err)
+                        }
+                      }
+                      fetchTask()
+                    }}
+                  />
+                )}
+
+                {/* Linked Tasks Section - Only show if task is not a subtask */}
+                {formData && formData.type !== 'subtask' && !formData.parent_id && (
+                  <LinkedTasksSection
+                    taskId={formData.task_id}
+                    projectId={projectId || ''}
+                    linkedTasks={formData.links || []}
+                    onLinkedTasksUpdated={() => {
                       const fetchTask = async () => {
                         try {
                           const res = await getOneTaskAPI(Number(taskId))
@@ -529,6 +577,16 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
           )}
         </div>
       </div>
+
+      {/* AI Task Summary Modal */}
+      {showAISummary && formData && projectId && taskId && (
+        <AITaskSummaryModal
+          isOpen={showAISummary}
+          onClose={() => setShowAISummary(false)}
+          projectId={projectId}
+          taskId={taskId}
+        />
+      )}
     </div>
   )
 }

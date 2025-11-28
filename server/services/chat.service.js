@@ -6,7 +6,7 @@ const ChatMember = require("../models/ChatMember");
 const Chat = require("../models/Chat");
 const MediaFile = require("../models/MediaFile");
 const Message = require("../models/Message");
-const User = require("../models/User"); // ⚠️ THIẾU IMPORT NÀY
+const User = require("../models/User");
 
 class ChatService {
   /**
@@ -16,6 +16,7 @@ class ChatService {
   async getAllChatsForUser(userId) {
     try {
       const chats = await Chat.findAll({
+        where: { is_ai: false },
         include: [
           {
             model: ChatMember,
@@ -122,6 +123,7 @@ class ChatService {
           name: displayName,
           avatar: displayAvatar,
           is_group: chat.is_group,
+          is_ai: chat.is_ai || false,
           members: chat.members.map((m) => m.user_id),
           chat_color: chat.chat_color,
           lastMessage: lastMsg ? lastMsg.content : null,
@@ -161,6 +163,7 @@ class ChatService {
           {
             model: User,
             as: "sender",
+            required: false, // LEFT JOIN to include AI messages with null sender_id
             attributes: [
               "user_id",
               [
@@ -185,7 +188,12 @@ class ChatService {
         message_id: msg.message_id,
         chat_id: msg.chat_id,
         sender_id: msg.sender_id,
-        senderName: msg.sender ? msg.sender.name : "Unknown",
+        senderName:
+          msg.sender_id === null
+            ? "AI Assistant"
+            : msg.sender
+            ? msg.sender.name
+            : "Unknown",
         senderAvatar: msg.sender?.avatar,
         content: msg.content,
         type: msg.type,
@@ -213,19 +221,21 @@ class ChatService {
     try {
       const { chat_id, sender_id, content, type, file } = data;
 
-      // Check user có trong chat không
-      const member = await ChatMember.findOne({
-        where: { chat_id, user_id: sender_id },
-        transaction,
-      });
+      // Check user có trong chat không (skip for AI messages with null sender_id)
+      if (sender_id !== null) {
+        const member = await ChatMember.findOne({
+          where: { chat_id, user_id: sender_id },
+          transaction,
+        });
 
-      if (!member) {
-        throw new ApiError("Bạn không thuộc nhóm chat này", 403);
-      }
+        if (!member) {
+          throw new ApiError("Bạn không thuộc nhóm chat này", 403);
+        }
 
-      // ⚠️ FIX: Check member có bị block không (nếu có field này)
-      if (member.is_blocked) {
-        throw new ApiError("Bạn đã bị chặn trong chat này", 403);
+        // ⚠️ FIX: Check member có bị block không (nếu có field này)
+        if (member.is_blocked) {
+          throw new ApiError("Bạn đã bị chặn trong chat này", 403);
+        }
       }
 
       let file_url = null;
@@ -279,18 +289,29 @@ class ChatService {
 
       await transaction.commit();
 
-      const sender = await User.findByPk(sender_id, {
-        attributes: ["user_id", "first_name", "last_name", "avatar"],
-      });
+      // Get sender info (skip for AI messages)
+      let senderName = "AI Assistant";
+      let senderAvatar = null;
+
+      if (sender_id !== null) {
+        const sender = await User.findByPk(sender_id, {
+          attributes: ["user_id", "first_name", "last_name", "avatar"],
+        });
+
+        if (sender) {
+          senderName = `${sender.first_name} ${sender.last_name}`;
+          senderAvatar = sender.avatar;
+        } else {
+          senderName = "Unknown";
+        }
+      }
 
       return {
         message_id: message.message_id,
         chat_id: message.chat_id,
         sender_id: message.sender_id,
-        senderName: sender
-          ? `${sender.first_name} ${sender.last_name}`
-          : "Unknown",
-        senderAvatar: sender?.avatar,
+        senderName: senderName,
+        senderAvatar: senderAvatar,
         content: message.content,
         type: message.type,
         file_url: message.file_url,
@@ -641,6 +662,7 @@ class ChatService {
       // Check 1-1 chat đã tồn tại chưa
       if (!isGroup) {
         // Tìm tất cả chat 1-1 mà createdBy tham gia
+
         const existingChats = await ChatMember.findAll({
           where: { user_id: createdBy },
           include: [
@@ -959,6 +981,72 @@ class ChatService {
       console.error("getChatById error:", err);
       throw new ApiError(
         err.message || "Không thể lấy thông tin chat",
+        err.statusCode || 500
+      );
+    }
+  }
+  /**
+   * ⚠️ THÊM MỚI: Tạo AI chat cho project
+   * @param {object} data { name, createdBy, chatColor, isAI }
+   * @param {string} projectId
+   */
+  async createAIChat(data, projectId) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const { name, createdBy, chatColor, isAI } = data;
+
+      // Tạo chat
+      const chatData = {
+        name: name || `AI Assistant`,
+        is_group: false,
+        is_ai: isAI || true,
+        chat_color: chatColor || "#10b981",
+        created_by: createdBy,
+        created_at: new Date(),
+      };
+
+      const chat = await Chat.create(chatData, { transaction });
+
+      // Chỉ thêm user vào chat, không có AI bot
+      await ChatMember.create(
+        {
+          chat_id: chat.chat_id,
+          user_id: createdBy,
+          joined_at: new Date(),
+        },
+        { transaction }
+      );
+
+      // Tạo welcome message từ AI
+      await Message.create(
+        {
+          chat_id: chat.chat_id,
+          sender_id: null, // NULL for AI messages (no user reference)
+          content: `Xin chào! 👋 Tôi là trợ lý AI của bạn. Tôi có thể giúp bạn:
+
+✨ Tóm tắt thông tin task
+📊 Phân tích tiến độ dự án
+🎯 Dự đoán timeline
+❓ Trả lời câu hỏi về dự án
+
+Hãy hỏi tôi bất cứ điều gì!`,
+          type: "text",
+          timestamp: new Date(),
+        },
+        { transaction }
+      );
+
+      await transaction.commit();
+
+      // Lấy lại chat với đầy đủ thông tin
+      const fullChat = await this.getChatById(chat.chat_id, createdBy);
+      return { ...fullChat, is_ai: true };
+    } catch (err) {
+      await transaction.rollback();
+      console.error("createAIChat error:", err);
+      throw new ApiError(
+        err.message || "Không thể tạo AI chat",
         err.statusCode || 500
       );
     }

@@ -1,12 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { TabPanel, TabView } from 'primereact/tabview'
 import styled from 'styled-components'
-import { Calendar, CalendarClock, FileStackIcon, Globe, Kanban, Rows3Icon } from 'lucide-react'
+import {
+  Calendar,
+  CalendarClock,
+  FileStackIcon,
+  Globe,
+  Kanban,
+  Play,
+  Rows3Icon,
+  Users,
+  FileBarChart
+} from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import SummaryTab from '../components/summary/SummaryTab'
 import BoardTab from '../components/board/BoardTab'
 import BacklogTab from '../components/board/BacklogTab'
 import CalendarTab from '../components/calendar/CalendarTab'
+import TaskListView from './project/TaskListView/TaskListView'
+import MembersTab from '../components/members/MembersTab'
+import TestCaseTab from '../components/testcase/TestCaseTab'
+import TestRunTab from '../components/testrun/TestRunTab'
+import ReportTab from '../components/report/ReportTab'
+import { useProjectRole } from '../hooks/useProjectRole'
+import AIFloatingButton from '../components/ai/AIFloatingButton'
 
 const CssLayout = styled.div`
   .p-tabview .p-tabview-nav,
@@ -94,16 +111,36 @@ const CssLayout = styled.div`
 export default function Dashboard() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { permissions } = useProjectRole()
 
   // ánh xạ route <-> tab index
-  const tabs = [
+  const allTabs = [
     { path: '', component: <SummaryTab />, label: 'Tóm tắt', icon: <Globe size={20} /> },
     { path: 'board', component: <BoardTab />, label: 'Board', icon: <Kanban size={20} /> },
     { path: 'backlog', component: <BacklogTab />, label: 'Backlog', icon: <FileStackIcon size={20} /> },
-    { path: 'list', component: <BacklogTab />, label: 'List', icon: <Rows3Icon size={20} /> },
+    { path: 'list', component: <TaskListView />, label: 'List', icon: <Rows3Icon size={20} /> },
     { path: 'calendar', component: <CalendarTab />, label: 'Lịch', icon: <Calendar size={20} /> },
-    { path: 'timeline', component: <div>Timeline here</div>, label: 'Timeline', icon: <CalendarClock size={20} /> }
+    { path: 'members', component: <MembersTab />, label: 'Thành viên', icon: <Users size={20} /> },
+    {
+      path: 'reports',
+      component: <ReportTab />,
+      label: 'Báo cáo',
+      icon: <FileBarChart size={20} />,
+      requiresLeader: true
+    },
+    { path: 'testcase', component: <TestCaseTab />, label: 'Testcase', icon: <CalendarClock size={20} /> },
+    { path: 'test-runs', component: <TestRunTab />, label: 'Test Runs', icon: <Play size={20} /> }
   ]
+
+  // Filter tabs based on permissions - hide Reports tab for non-leaders
+  const tabs = useMemo(() => {
+    return allTabs.filter((tab) => {
+      if (tab.requiresLeader) {
+        return permissions.canAccessReports
+      }
+      return true
+    })
+  }, [permissions.canAccessReports])
 
   // xác định tab hiện tại dựa vào URL
   const currentPath = location.pathname.split('/').pop() || ''
@@ -136,6 +173,7 @@ export default function Dashboard() {
           </TabPanel>
         ))}
       </TabView>
+      <AIFloatingButton />
     </CssLayout>
   )
 }

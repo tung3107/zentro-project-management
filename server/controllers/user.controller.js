@@ -126,3 +126,13 @@ exports.getAllUserWithParam = catchAsync(async (req, res, next) => {
     ...result,
   });
 });
+
+exports.getOneUser = catchAsync(async (req, res, next) => {
+  const { user_id } = req.params;
+  const data = await new UserService().getOneUser(user_id);
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});

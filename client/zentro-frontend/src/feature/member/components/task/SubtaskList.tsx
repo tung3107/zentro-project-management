@@ -9,6 +9,7 @@ interface SubtaskListProps {
   subtasks?: Task[]
   parentTaskId: number
   projectId: string
+  sprintId: number
   onSubtaskAdded?: () => void
   onSubtaskUpdated?: () => void
   onSubtaskDeleted?: () => void
@@ -18,6 +19,7 @@ export default function SubtaskList({
   subtasks = [],
   parentTaskId,
   projectId,
+  sprintId,
   onSubtaskAdded,
   onSubtaskUpdated,
   onSubtaskDeleted
@@ -58,6 +60,7 @@ export default function SubtaskList({
         {/* Add Subtask Input */}
         {isAdding ? (
           <AddSubtaskInput
+            sprintId={sprintId}
             parentTaskId={parentTaskId}
             projectId={projectId}
             onAdded={handleSubtaskAdded}

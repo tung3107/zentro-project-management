@@ -25,7 +25,8 @@ interface AuthState {
   setTokens: (access: string, refresh: string) => void
   setPermission: (permissions: Permission[]) => void
   setIsChangePassword: (b: boolean) => void
-
+  projectPermissions: Record<string, any>
+  setProjectPermissions: (projectPermissions: Record<string, any>) => void
   logout: () => void
 }
 
@@ -40,7 +41,9 @@ export const useAuthStore = create<AuthState>()(
       isPermLoading: false,
       permissions: [],
       is_change_password: true,
+      projectPermissions: {},
 
+      setProjectPermissions: (projectPermissions) => set({ projectPermissions }),
       setUnauthorized: (v) => set({ isUnauthorized: v }),
       setIsChangePassword: (b) => set({ is_change_password: b }),
 
@@ -58,7 +61,8 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           permissions: undefined,
           refreshToken: null,
-          isAuthenticated: false
+          isAuthenticated: false,
+          projectPermissions: {}
         })
     }),
     {
@@ -69,6 +73,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         is_change_password: state.is_change_password,
         permissions: state.permissions,
+        projectPermissions: state.projectPermissions,
         isAuthenticated: state.isAuthenticated
       })
     }

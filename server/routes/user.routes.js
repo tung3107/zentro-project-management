@@ -9,10 +9,14 @@ const {
   deleteOneUser,
   resetUserPassword,
   searchUserForProject,
+  getOneUser,
 } = require("../controllers/user.controller");
 const upload = require("../middlewares/upload");
 
 const routes = express.Router();
+
+routes.route("/search").get(protectRoute, searchUserForProject);
+routes.route("/update-profile").put(protectRoute, updateUserProfile);
 
 routes
   .route("/")
@@ -25,17 +29,6 @@ routes
   );
 
 routes
-  .route("/:user_id")
-  .put(
-    protectRoute,
-    authorize("user", "update"),
-    upload.single("avatar"),
-    updateUserAdmin
-  )
-  .delete(protectRoute, authorize("user", "delete"), deleteOneUser);
-
-routes.route("/update-profile").put(protectRoute, updateUserProfile);
-routes
   .route("/reset-user-password")
   .post(protectRoute, authorize("user", "update"), resetUserPassword);
 
@@ -43,6 +36,15 @@ routes
   .route("/leader")
   .get(protectRoute, authorize("user", "read"), getAllUser);
 
-routes.route("/search").get(protectRoute, searchUserForProject);
+routes
+  .route("/:user_id")
+  .get(protectRoute, getOneUser)
+  .put(
+    protectRoute,
+    authorize("user", "update"),
+    upload.single("avatar"),
+    updateUserAdmin
+  )
+  .delete(protectRoute, authorize("user", "delete"), deleteOneUser);
 
 module.exports = routes;

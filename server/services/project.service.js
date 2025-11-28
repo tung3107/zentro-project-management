@@ -151,7 +151,7 @@ class ProjectService {
    */
   async getAllProjectsWithParam(options = {}) {
     const { leader_id, ...rest } = options;
-    const roleNames = ["Leader", "Project Manager"];
+    const roleNames = ["Leader", "Project Manager", "Trưởng nhóm"];
 
     const result = await getAllWithParams(Project, rest, {
       defaultSortBy: "project_id",
@@ -321,42 +321,41 @@ class ProjectService {
         value: count,
       }));
 
-      // Count by priority (0: Lowest, 1: Low, 2: Medium, 3: High, 4: Highest)
-      const priorityLabels = ["Thấp", "Trung bình", "Cao", "Cần gấp"];
+      const priorityLabels = ["Cần gấp", "Cao", "Trung bình", "Thấp"];
       const priorityCounts = [0, 0, 0, 0];
+
       tasks.forEach((task) => {
         const priority = task.priority || 0;
-        if (priority >= 0 && priority <= 4) {
-          priorityCounts[priority]++;
+        if (priority >= 0 && priority <= 3) {
+          priorityCounts[3 - priority]++;
         }
       });
 
-      const priorityData = priorityLabels
-        .map((label, index) => ({
-          label,
-          value: priorityCounts[index],
-        }))
-        .filter((item) => item.value > 0); // Only include priorities with tasks
+      const priorityPercent = priorityCounts.map((count) =>
+        totalTasks > 0 ? ((count / totalTasks) * 100).toFixed(2) : "0.00"
+      );
+
+      const priorityData = priorityLabels.map((label, index) => ({
+        label,
+        value: priorityPercent[index],
+      }));
 
       // Calculate workload by assignee
       const assigneeWorkload = {};
       tasks.forEach((task) => {
-        if (task.assignee_id) {
-          if (!assigneeWorkload[task.assignee_id]) {
-            assigneeWorkload[task.assignee_id] = {
-              user_id: task.assignee_id,
-              name: task.assignee
-                ? `${task.assignee.first_name} ${task.assignee.last_name}`
-                : "Unknown",
-              avatar: task.assignee?.avatar || null,
-              count: 0,
-            };
-          }
-          assigneeWorkload[task.assignee_id].count++;
+        const key = task.assignee_id || "unassigned";
+        if (!assigneeWorkload[key]) {
+          assigneeWorkload[key] = {
+            user_id: task.assignee_id,
+            name: task.assignee
+              ? `${task.assignee.first_name} ${task.assignee.last_name}`
+              : "Chưa được giao",
+            avatar: task.assignee?.avatar || null,
+            count: 0,
+          };
         }
+        assigneeWorkload[key].count++;
       });
-
-      // Convert to workload percentage
       const workLoad = Object.values(assigneeWorkload).map((assignee) => ({
         user_id: assignee.user_id,
         name: assignee.name,

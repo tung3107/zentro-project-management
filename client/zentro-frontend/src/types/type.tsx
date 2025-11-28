@@ -36,8 +36,8 @@ export const type = [
 ]
 
 export const priorityColors = [
-  { value: 3, label: 'Cần gấp', color: '#ef4444', icon: <Flame size={14} color='#ef4444' /> },
-  { value: 2, label: 'Cao', color: '#fa7115ff', icon: <ArrowUp size={14} color='#fa7115ff' /> },
-  { value: 1, label: 'Trung bình', color: '#facc15', icon: <Minus size={14} color='#facc15' /> },
-  { value: 0, label: 'Thấp', color: '#22c55e', icon: <ArrowDown size={14} color='#22c55e' /> }
+  { value: 3, label: 'Cần gấp', color: '#ef4444', icon: <Flame size={18} color='#ef4444' /> },
+  { value: 2, label: 'Cao', color: '#fa7115ff', icon: <ArrowUp size={18} color='#fa7115ff' /> },
+  { value: 1, label: 'Trung bình', color: '#facc15', icon: <Minus size={18} color='#facc15' /> },
+  { value: 0, label: 'Thấp', color: '#22c55e', icon: <ArrowDown size={18} color='#22c55e' /> }
 ]

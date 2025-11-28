@@ -4,6 +4,9 @@ import { TabView, TabPanel } from 'primereact/tabview'
 import AdminNavigation from '../components/AdminNavigation'
 import PermissionMatrix, { type Role } from '../components/PermissionMatrix'
 import ProjectRoleCom from '../components/ProjectRoleCom'
+import ProjectListForRolePermission from '../components/ProjectListForRolePermission'
+import ProjectRolePermissionMatrix from '../components/ProjectRolePermissionMatrix'
+import type { ProjectWithRolePermissions } from '../service/projectrole.service'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 export const ContentLayout = styled.div`
@@ -91,40 +94,9 @@ export const ContentLayout = styled.div`
   }
 `
 
-const systemRoles: Role[] = [
-  {
-    role_id: 1,
-    role_name: 'Supper Admin',
-    description: 'Toàn quyền quản lý hệ thống',
-    icon: 'pi pi-shield',
-    permissions: [
-      { name: 'Truy cập Admin Site', allowed: true },
-      { name: 'Truy cập Member Site', allowed: false },
-      { name: 'Tạo Project', allowed: true },
-      { name: 'Chỉnh sửa Project', allowed: true },
-      { name: 'Xóa Project', allowed: true },
-      { name: 'Thao tác các task trong project', allowed: false },
-
-      { name: 'Thay đổi Users & Quyền', allowed: true }
-    ]
-  },
-  {
-    role_id: 2,
-    role_name: 'Member',
-    description: 'Thành viên dự án',
-    icon: 'pi pi-user',
-    permissions: [
-      { name: 'Truy cập Admin Site', allowed: false },
-      { name: 'Truy cập Member Site', allowed: true },
-      { name: 'Thao tác các task trong project', allowed: true },
-
-      { name: 'Thay đổi Users & Quyền', allowed: false }
-    ]
-  }
-]
-
 export default function Role() {
   const [activeIndex, setActiveIndex] = useState(0)
+  const [selectedProject, setSelectedProject] = useState<ProjectWithRolePermissions | null>(null)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -137,13 +109,25 @@ export default function Role() {
     } else {
       setActiveIndex(0)
     }
+
+    // Reset selected project when URL changes
+    setSelectedProject(null)
   }, [location.search])
 
   // 🎯 Khi đổi tab -> update URL tương ứng
   const handleTabChange = (e: { index: number }) => {
     setActiveIndex(e.index)
+    setSelectedProject(null) // Reset selected project when changing tabs
     const newType = e.index === 1 ? 'project' : 'system'
     navigate(`?type=${newType}`)
+  }
+
+  const handleSelectProject = (project: ProjectWithRolePermissions) => {
+    setSelectedProject(project)
+  }
+
+  const handleBackToProjectList = () => {
+    setSelectedProject(null)
   }
 
   return (
@@ -151,15 +135,12 @@ export default function Role() {
       <AdminNavigation />
 
       <TabView activeIndex={activeIndex} onTabChange={handleTabChange}>
-        <TabPanel header='System Role' leftIcon='pi pi-lock mr-2'>
-          <p className='mb-3 text-gray-600 italic'>
-            Các role hệ thống mặc định (Admin, Member) của hệ thống. Bạn không thể xóa hay thay đổi role hệ thống.
-          </p>
-          <PermissionMatrix roles={systemRoles} />
-        </TabPanel>
-
-        <TabPanel header='Project Role' leftIcon='pi pi-briefcase mr-2'>
-          <ProjectRoleCom />
+        <TabPanel header='Quản Lý Quyền Theo Dự Án' leftIcon='pi pi-shield mr-2'>
+          {selectedProject ? (
+            <ProjectRolePermissionMatrix project={selectedProject} onBack={handleBackToProjectList} />
+          ) : (
+            <ProjectListForRolePermission onSelectProject={handleSelectProject} />
+          )}
         </TabPanel>
       </TabView>
     </ContentLayout>

@@ -45,9 +45,6 @@ export default function DescriptionEditor({
             'fontsize',
             'table',
             '|',
-            'link',
-            'image',
-            'video',
             '|',
             'source'
           ]

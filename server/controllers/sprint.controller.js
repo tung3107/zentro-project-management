@@ -12,6 +12,16 @@ exports.getCurrentSprintDetails = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.checkCompleteSprint = catchAsync(async (req, res, next) => {
+  const { sprint_id } = req.params;
+  const data = await new SprintService().checkCompleteSprint(sprint_id);
+
+  res.status(200).json({
+    status: "success",
+    data,
+  });
+});
+
 exports.getOneSprint = catchAsync(async (req, res, next) => {
   const { sprint_id } = req.params;
 
@@ -36,8 +46,9 @@ exports.getAllSprints = catchAsync(async (req, res, next) => {
 
 exports.createSprint_planned_status = catchAsync(async (req, res, next) => {
   const { project_id, name, goal, start_date, end_date } = req.body;
+  const user_id = req.user.user_id;
 
-  const data = await new SprintService().createSprint_planned_status({
+  const data = await new SprintService().createSprint_planned_status(user_id, {
     project_id,
     name,
     goal,
@@ -54,14 +65,36 @@ exports.createSprint_planned_status = catchAsync(async (req, res, next) => {
 exports.startSprint = catchAsync(async (req, res, next) => {
   const { sprint_id } = req.params;
   const { name, goal, start_date, end_date, project_id } = req.body;
+  const user_id = req.user.user_id;
 
-  const data = await new SprintService().startSprint(sprint_id, {
-    name,
-    goal,
-    start_date,
-    end_date,
-    project_id,
+  const data = await new SprintService().startSprint(
+    user_id,
+    sprint_id,
+    {
+      name,
+      goal,
+      start_date,
+      end_date,
+      project_id,
+    },
+    req.user.user_id
+  );
+
+  res.status(200).json({
+    status: "success",
+    data,
   });
+});
+
+exports.completeSprint = catchAsync(async (req, res, next) => {
+  const { sprint_id } = req.params;
+  const { incompleteTasks } = req.body;
+
+  const data = await new SprintService().completeSprint(
+    req.user.user_id,
+    sprint_id,
+    incompleteTasks
+  );
 
   res.status(200).json({
     status: "success",

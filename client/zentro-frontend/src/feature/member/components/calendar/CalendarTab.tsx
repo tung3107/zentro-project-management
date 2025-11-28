@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, Filter, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Filter, X, Bot } from 'lucide-react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import CalendarView from './CalendarView'
 import { Skeleton } from 'primereact/skeleton'
@@ -10,6 +10,7 @@ import api from '../../../../util/axiosClient'
 import { getTasksByMonth } from '../../service/task.service'
 import { getAllSprintsAPI } from '../../service/sprint.service'
 import TaskDetailModal from '../task/TaskDetailModal'
+import AIChatPanel from '../ai/AIChatPanel'
 
 export default function CalendarTab() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -22,6 +23,7 @@ export default function CalendarTab() {
   const [members, setMembers] = useState<User[]>([])
   const [statuses, setStatuses] = useState<any[]>([])
   const [sprints, setSprints] = useState<Sprint[]>([])
+  const [showAIChat, setShowAIChat] = useState(false)
 
   const [searchParams, setSearchParams] = useSearchParams()
   const taskIdFromQuery = searchParams.get('task')
@@ -48,7 +50,7 @@ export default function CalendarTab() {
 
   const loadMembers = async () => {
     try {
-      const res = await api.get(`/members/project/${projectId}`)
+      const res = await api.get(`/members/dropdown/${projectId}`)
       setMembers(res.data.data || [])
     } catch (err) {
       console.error('Failed to load members:', err)
@@ -138,64 +140,76 @@ export default function CalendarTab() {
           <h2 className='text-xl font-bold text-gray-900 capitalize'>{monthName}</h2>
         </div>
 
-        {/* Filter */}
-        <div className='relative'>
+        {/* Right side: AI button + Filter */}
+        <div className='flex items-center gap-3'>
+          {/* AI Assistant Button */}
           <button
-            onClick={() => setShowFilterMenu(!showFilterMenu)}
-            className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
-              selectedAssignee
-                ? 'bg-blue-50 border-blue-400 text-blue-700'
-                : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-            }`}
+            onClick={() => setShowAIChat(true)}
+            className='flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg'
           >
-            <Filter size={18} />
-            Lọc theo người thực hiện
-            {selectedAssignee && <span className='px-1.5 py-0.5 text-xs bg-blue-600 text-white rounded-full'>1</span>}
+            <Bot size={18} />
+            AI Assistant
           </button>
 
-          {/* Filter dropdown */}
-          {showFilterMenu && (
-            <div className='absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50'>
-              <div className='p-3 border-b border-gray-200 flex items-center justify-between'>
-                <span className='text-sm font-semibold text-gray-900'>Người thực hiện</span>
-                <button onClick={() => setShowFilterMenu(false)} className='p-1 hover:bg-gray-100 rounded'>
-                  <X size={16} className='text-gray-600' />
-                </button>
-              </div>
-              <div className='p-2 max-h-64 overflow-y-auto'>
-                <button
-                  onClick={() => {
-                    setSelectedAssignee(undefined)
-                    setShowFilterMenu(false)
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                    !selectedAssignee ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  Tất cả
-                </button>
-                {members.map((member) => {
-                  const isSelected = selectedAssignee === member.user_id
-                  const memberName = `${member.first_name} ${member.last_name}`
+          {/* Filter */}
+          <div className='relative'>
+            <button
+              onClick={() => setShowFilterMenu(!showFilterMenu)}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
+                selectedAssignee
+                  ? 'bg-blue-50 border-blue-400 text-blue-700'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Filter size={18} />
+              Lọc theo người thực hiện
+              {selectedAssignee && <span className='px-1.5 py-0.5 text-xs bg-blue-600 text-white rounded-full'>1</span>}
+            </button>
 
-                  return (
-                    <button
-                      key={member.user_id}
-                      onClick={() => {
-                        setSelectedAssignee(member.user_id)
-                        setShowFilterMenu(false)
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                        isSelected ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {memberName}
-                    </button>
-                  )
-                })}
+            {/* Filter dropdown */}
+            {showFilterMenu && (
+              <div className='absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50'>
+                <div className='p-3 border-b border-gray-200 flex items-center justify-between'>
+                  <span className='text-sm font-semibold text-gray-900'>Người thực hiện</span>
+                  <button onClick={() => setShowFilterMenu(false)} className='p-1 hover:bg-gray-100 rounded'>
+                    <X size={16} className='text-gray-600' />
+                  </button>
+                </div>
+                <div className='p-2 max-h-64 overflow-y-auto'>
+                  <button
+                    onClick={() => {
+                      setSelectedAssignee(undefined)
+                      setShowFilterMenu(false)
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                      !selectedAssignee ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    Tất cả
+                  </button>
+                  {members.map((member) => {
+                    const isSelected = selectedAssignee === member.id
+                    const memberName = `${member.name}`
+
+                    return (
+                      <button
+                        key={member.id}
+                        onClick={() => {
+                          setSelectedAssignee(member.id)
+                          setShowFilterMenu(false)
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                          isSelected ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {memberName}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -229,6 +243,9 @@ export default function CalendarTab() {
           members={members}
         />
       )}
+
+      {/* AI Chat Panel */}
+      <AIChatPanel isOpen={showAIChat} onClose={() => setShowAIChat(false)} />
     </div>
   )
 }

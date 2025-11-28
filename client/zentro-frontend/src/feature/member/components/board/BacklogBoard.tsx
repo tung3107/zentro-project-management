@@ -5,10 +5,11 @@ import { Menu } from 'primereact/menu'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { AxiosError } from 'axios'
+import api from '../../../../util/axiosClient'
 import type { Task } from '../../../../types/task'
 import type { Sprint } from '../../../../types/sprint'
 import { getBacklog, searchBacklog, updateTaskAPI } from '../../service/task.service'
-import { deleteSprintAPI, startsprintAPI } from '../../service/sprint.service'
+import { deleteSprintAPI, startsprintAPI, completeSprintAPI, getAllSprintsAPI } from '../../service/sprint.service'
 import type { ApiErrorResponse } from '../../../auth/hooks/useAuth'
 import AddTaskCom from '../task/AddTaskCom'
 import EditSprintCom from '../sprint/EditSprintCom'
@@ -16,6 +17,8 @@ import AddSprintCom from '../sprint/AddSprintCom'
 import TaskCard from '../task/TaskCard'
 import OverlayCenterModal from '../../../../components/OverlayCenterModal'
 import TaskDetailModal from '../task/TaskDetailModal'
+import CompleteSprintModal from '../sprint/CompleteSprintModal'
+import { useProjectRole } from '../../hooks/useProjectRole'
 
 interface BacklogType {
   backlog: { tasks: Task[] }
@@ -25,7 +28,7 @@ interface BacklogType {
 export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
   const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({ backlog: true })
   const menuRef = useRef<any>(null)
-  const [menuModel, setMenuModel] = useState([])
+  const [menuModel, setMenuModel] = useState<any[]>([])
   const { projectId } = useParams()
 
   const [addModalOpen, setAddModalOpen] = useState(false)
@@ -44,9 +47,14 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
 
   const [reloadKey, setReloadKey] = useState(0)
   const [selectedSprint, setSelectedSprint] = useState<number | null>(0)
+  const [sprintToComplete, setSprintToComplete] = useState<Sprint | null>(null)
+  const [allSprints, setAllSprints] = useState<Sprint[]>([])
+  const [completedStatusIds, setCompletedStatusIds] = useState<number[]>([])
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const taskIdFromQuery = searchParams.get('task')
+
+  const { permissions, isLoading: loadingPermissions } = useProjectRole()
 
   const [data, setData] = useState<BacklogType>({
     backlog: { tasks: [] },
@@ -83,6 +91,19 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
           expandAll[sprint.sprint_id] = true
         })
         setExpanded(expandAll)
+
+        // Load all sprints for the complete sprint modal
+        const allSprintsRes = await getAllSprintsAPI(projectId)
+        setAllSprints(allSprintsRes.data || [])
+
+        // Load statuses to determine completed tasks
+        const statusRes = await api.get(`/status/${projectId}`)
+        const statuses = statusRes.data.data || []
+        // Find "done" or "completed" status IDs
+        const completedIds = statuses
+          .filter((s: any) => s.name?.toLowerCase().includes('done') || s.name?.toLowerCase().includes('hoàn thành'))
+          .map((s: any) => s.status_id)
+        setCompletedStatusIds(completedIds)
       } catch (err) {
         console.error(err)
       } finally {
@@ -178,6 +199,10 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
 
   const handleAddSprint = () => {
     if (!projectId) return
+    if (!permissions.canCreateSprint) {
+      toast.error('Bạn không có quyền tạo giai đoạn!')
+      return
+    }
     openAddSprintModal(
       <AddSprintCom
         setAddModalContent={setAddSprintModalContent}
@@ -199,6 +224,10 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
   }
 
   const onDragEnd = async (result: any) => {
+    if (!permissions.canDragTaskSprint) {
+      toast.error('Bạn không có quyền thay đổi vị trí công việc!')
+      return
+    }
     const { source, destination } = result
     if (!destination) return
 
@@ -229,7 +258,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
             ...prev,
             sprints: prev.sprints.map((sprint) => {
               if (sprint.sprint_id === sprintId) {
-                const newTasks = [...sprint.tasks]
+                const newTasks = [...(sprint.tasks || [])]
                 const [moved] = newTasks.splice(source.index, 1)
                 newTasks.splice(destination.index, 0, moved)
                 return { ...sprint, tasks: newTasks }
@@ -293,7 +322,30 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
     }
   }
 
-  const completeSprint = (sprint_id: number) => alert(`✅ Sprint ${sprint_id} completed!`)
+  const completeSprint = (sprint: Sprint) => {
+    setSprintToComplete(sprint)
+  }
+
+  const handleCompleteSprintConfirm = async (
+    incompleteTasks: { taskId: string; action: 'backlog' | 'nextSprint'; targetSprintId?: number | null }[]
+  ) => {
+    if (!sprintToComplete) return
+
+    try {
+      if (!permissions.canCompleteSprint) {
+        toast.error('Bạn không có quyền hoàn thành sprint!')
+        return
+      }
+      await completeSprintAPI(sprintToComplete.sprint_id, incompleteTasks)
+      toast.success('Đã hoàn thành sprint thành công!')
+
+      setSprintToComplete(null)
+      setReloadKey((prev) => prev + 1)
+    } catch (err) {
+      const error = err as AxiosError<ApiErrorResponse>
+      toast.error(error.response?.data.error.message ?? 'Lỗi khi hoàn thành sprint!')
+    }
+  }
 
   const startSprint = async (sprint: Sprint) => {
     try {
@@ -458,15 +510,18 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                 </div>
 
                 <div className='flex items-center gap-3'>
-                  {sprint?.tasks && sprint.tasks.length > 0 && sprint.status === 'active' && (
-                    <button
-                      className='px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors cursor-pointer hover:opacity-90 transition-opacity'
-                      style={{ backgroundColor: '#0052CC' }}
-                      onClick={() => completeSprint(sprint.sprint_id)}
-                    >
-                      Hoàn thành sprint
-                    </button>
-                  )}
+                  {sprint?.tasks &&
+                    sprint.tasks.length > 0 &&
+                    sprint.status === 'active' &&
+                    permissions.canCompleteSprint && (
+                      <button
+                        className='px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors cursor-pointer hover:opacity-90 transition-opacity'
+                        style={{ backgroundColor: '#0052CC' }}
+                        onClick={() => completeSprint(sprint)}
+                      >
+                        Hoàn thành sprint
+                      </button>
+                    )}
                   {sprint?.tasks && sprint.tasks.length > 0 && sprint.status === 'planned' && (
                     <button
                       className='px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors cursor-pointer hover:opacity-90 transition-opacity'
@@ -477,19 +532,31 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                     </button>
                   )}
                   <Menu model={menuModel} popup ref={menuRef} />
-                  <button
-                    className='p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 hover:text-gray-900'
-                    onClick={(e) => {
-                      setSelectedSprint(sprint.sprint_id)
-                      setMenuModel([
-                        { label: 'Sửa Sprint', icon: 'pi pi-pencil', command: () => handleEdit(sprint) },
-                        { label: 'Xóa Sprint', icon: 'pi pi-trash', command: () => handleDelete(sprint) }
-                      ])
-                      menuRef.current.toggle(e)
-                    }}
-                  >
-                    <MoreHorizontal size={20} />
-                  </button>
+                  {permissions.canCreateSprint || permissions.canDeleteSprint ? (
+                    <button
+                      className='p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 hover:text-gray-900'
+                      onClick={(e) => {
+                        setSelectedSprint(sprint.sprint_id)
+                        const menuItems = []
+                        if (permissions.canEdit)
+                          menuItems.push({
+                            label: 'Sửa Sprint',
+                            icon: 'pi pi-pencil',
+                            command: () => handleEdit(sprint)
+                          })
+                        if (permissions.canDeleteSprint)
+                          menuItems.push({
+                            label: 'Xóa Sprint',
+                            icon: 'pi pi-trash',
+                            command: () => handleDelete(sprint)
+                          })
+                        setMenuModel(menuItems)
+                        menuRef.current.toggle(e)
+                      }}
+                    >
+                      <MoreHorizontal size={20} />
+                    </button>
+                  ) : null}
                 </div>
               </div>
 
@@ -561,12 +628,14 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
             </button>
 
             <div className='flex items-center gap-3'>
-              <button
-                className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer'
-                onClick={handleAddSprint}
-              >
-                Tạo sprint mới
-              </button>
+              {permissions.canCreateSprint && (
+                <button
+                  className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer'
+                  onClick={handleAddSprint}
+                >
+                  Tạo sprint mới
+                </button>
+              )}
             </div>
           </div>
 
@@ -597,7 +666,12 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                               snapshot.isDragging ? 'opacity-90 scale-[1.02]' : ''
                             }`}
                           >
-                            <TaskCard task={task} isDragging={snapshot.isDragging} setReloadKey={setReloadKey} />
+                            <TaskCard
+                              task={task}
+                              isDragging={snapshot.isDragging}
+                              setReloadKey={setReloadKey}
+                              onTaskClick={handleTaskClick}
+                            />
                           </div>
                         )}
                       </Draggable>
@@ -610,13 +684,15 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
           )}
 
           {/* Create Task Button */}
-          <button
-            className='flex items-center justify-center w-full py-4 bg-gray-50 hover:bg-gray-100 border-t border-gray-200 text-gray-700 font-medium transition-colors cursor-pointer group'
-            onClick={handleAdd}
-          >
-            <PlusCircle size={18} className='mr-2 text-gray-600 group-hover:text-gray-900 transition-colors' />
-            <span>Tạo task mới</span>
-          </button>
+          {permissions.canCreateTask && (
+            <button
+              className='flex items-center justify-center w-full py-4 bg-gray-50 hover:bg-gray-100 border-t border-gray-200 text-gray-700 font-medium transition-colors cursor-pointer group'
+              onClick={handleAdd}
+            >
+              <PlusCircle size={18} className='mr-2 text-gray-600 group-hover:text-gray-900 transition-colors' />
+              <span>Tạo task mới</span>
+            </button>
+          )}
         </div>
       </DragDropContext>
 
@@ -685,6 +761,20 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
             navigate(newQueryString ? `backlog?${newQueryString}` : 'backlog', { replace: true })
           }}
           onUpdate={handleTaskUpdate}
+        />
+      )}
+
+      {/* Complete Sprint Modal */}
+      {sprintToComplete && (
+        <CompleteSprintModal
+          isOpen={true}
+          onClose={() => setSprintToComplete(null)}
+          sprint={sprintToComplete}
+          onConfirm={handleCompleteSprintConfirm}
+          availableSprints={allSprints.filter(
+            (s) => s.status === 'planned' && s.sprint_id !== sprintToComplete.sprint_id
+          )}
+          completedStatuses={completedStatusIds}
         />
       )}
     </div>

@@ -92,7 +92,7 @@ export default function MemberListEdit({
         .finally(() => setSearching(false))
     }, 400)
     return () => clearTimeout(delay)
-  }, [searchVal, editMode, members, searchUsers, addedNew])
+  }, [searchVal, editMode, members, addedNew])
 
   const handleRemove = (id: string) => setMembers(members.filter((m) => m.user.user_id !== id))
   const handleAdd = (user: MemberType) => {
