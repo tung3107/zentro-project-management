@@ -31,6 +31,7 @@ import TestRunnerModal from './TestRunnerModal'
 import { getMembersByProject, type MemberData } from '../../service/member.service'
 import { useNavigate } from 'react-router-dom'
 import { Skeleton } from 'primereact/skeleton'
+import ConfirmModal from '../../../../components/ConfirmModal'
 
 interface TestRunDetailProps {
   runId: number
@@ -56,6 +57,10 @@ export default function TestRunDetail({ runId, onBack, projectId }: TestRunDetai
   const [showMoreMenu, setShowMoreMenu] = useState<number | null>(null)
   const [showAssignDropdown, setShowAssignDropdown] = useState(false)
   const [members, setMembers] = useState<MemberData[]>([])
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false)
+  const [testCaseToRemove, setTestCaseToRemove] = useState<number | null>(null)
+  const [showRemoveTestCaseConfirm, setShowRemoveTestCaseConfirm] = useState(false)
+  const [showBulkRemoveConfirm, setShowBulkRemoveConfirm] = useState(false)
 
   const fetchDetail = async () => {
     setIsLoading(true)
@@ -103,9 +108,12 @@ export default function TestRunDetail({ runId, onBack, projectId }: TestRunDetai
     }
   }
 
-  const handleCompleteRun = async () => {
+  const handleCompleteRunClick = () => {
+    setShowCompleteConfirm(true)
+  }
+
+  const handleConfirmCompleteRun = async () => {
     if (!run) return
-    if (!confirm('Bạn có chắc chắn muốn hoàn thành Test Run này?')) return
 
     try {
       const res = await updateTestRunStatusAPI(runId, 'completed')
@@ -121,7 +129,7 @@ export default function TestRunDetail({ runId, onBack, projectId }: TestRunDetai
     const groups: Record<string, GroupedTestCases> = {}
     const orphanGroup: GroupedTestCases = {
       suiteId: null,
-      suiteName: 'Test cases without suite',
+      suiteName: 'Test case không có suite',
       testCases: []
     }
 
@@ -212,19 +220,28 @@ export default function TestRunDetail({ runId, onBack, projectId }: TestRunDetai
     }
   }
 
-  const handleRemoveTestCase = async (testcaseId: number) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa test case này khỏi test run?')) return
+  const handleRemoveTestCaseClick = (testcaseId: number) => {
+    setTestCaseToRemove(testcaseId)
+    setShowRemoveTestCaseConfirm(true)
+  }
+
+  const handleConfirmRemoveTestCase = async () => {
+    if (!testCaseToRemove) return
     try {
-      await removeTestCaseFromRunAPI(runId, testcaseId)
+      await removeTestCaseFromRunAPI(runId, testCaseToRemove)
       fetchDetail()
       setShowMoreMenu(null)
+      setTestCaseToRemove(null)
     } catch (error) {
       console.error('Failed to remove test case:', error)
     }
   }
 
-  const handleBulkRemove = async () => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedTestCases.size} test cases khỏi test run?`)) return
+  const handleBulkRemoveClick = () => {
+    setShowBulkRemoveConfirm(true)
+  }
+
+  const handleConfirmBulkRemove = async () => {
     try {
       await bulkRemoveTestCasesAPI(runId, Array.from(selectedTestCases))
       setSelectedTestCases(new Set())
@@ -388,7 +405,7 @@ export default function TestRunDetail({ runId, onBack, projectId }: TestRunDetai
         <div className='flex items-center gap-3'>
           {run.status !== 'completed' && (
             <button
-              onClick={handleCompleteRun}
+              onClick={handleCompleteRunClick}
               className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center gap-2 text-sm'
             >
               <CheckCircle size={16} />
@@ -568,7 +585,7 @@ export default function TestRunDetail({ runId, onBack, projectId }: TestRunDetai
                                   </span>
                                 </>
                               ) : (
-                                <span className='text-xs text-gray-400 italic'>Unassigned</span>
+                                <span className='text-xs text-gray-400 italic'>Chưa gán</span>
                               )}
                             </div>
 
@@ -630,12 +647,12 @@ export default function TestRunDetail({ runId, onBack, projectId }: TestRunDetai
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation()
-                                        handleRemoveTestCase(tc.testcase_id)
+                                        handleRemoveTestCaseClick(tc.testcase_id)
                                       }}
                                       className='w-full px-4 py-2 text-left hover:bg-red-50 transition-colors flex items-center gap-2 text-red-600 text-sm'
                                     >
                                       <Trash2 size={14} />
-                                      Xóa khỏi test run
+                                      Xóa khỏi đợt kiểm thử
                                     </button>
                                   </div>
                                 </>
@@ -651,7 +668,7 @@ export default function TestRunDetail({ runId, onBack, projectId }: TestRunDetai
             })}
             {groupedCases.length === 0 && (
               <div className='text-center py-12 bg-white rounded-xl border border-gray-200 border-dashed'>
-                <p className='text-gray-500'>No test cases found matching your criteria.</p>
+                <p className='text-gray-500'>Không tìm thấy test case nào phù hợp với tiêu chí của bạn.</p>
               </div>
             )}
           </div>
@@ -750,7 +767,7 @@ export default function TestRunDetail({ runId, onBack, projectId }: TestRunDetai
               </button>
               <div className='h-6 w-px bg-gray-300' />
               <span className='text-sm text-gray-600'>
-                Đã chọn <span className='font-semibold text-gray-900'>{selectedTestCases.size}</span> test cases
+                Đã chọn <span className='font-semibold text-gray-900'>{selectedTestCases.size}</span> test case
               </span>
             </div>
 
@@ -801,7 +818,7 @@ export default function TestRunDetail({ runId, onBack, projectId }: TestRunDetai
               </div>
 
               <button
-                onClick={handleBulkRemove}
+                onClick={handleBulkRemoveClick}
                 className='px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center gap-2'
               >
                 <Trash2 size={16} />
@@ -831,6 +848,37 @@ export default function TestRunDetail({ runId, onBack, projectId }: TestRunDetai
           }}
         />
       )}
+
+      {/* Confirm Modals */}
+      <ConfirmModal
+        isOpen={showCompleteConfirm}
+        onClose={() => setShowCompleteConfirm(false)}
+        onConfirm={handleConfirmCompleteRun}
+        title='Hoàn thành đợt kiểm thử'
+        message='Bạn có chắc chắn muốn hoàn thành Đợt kiểm thử này?'
+        confirmText='Hoàn thành'
+        confirmButtonColor='bg-blue-600 hover:bg-blue-700'
+      />
+
+      <ConfirmModal
+        isOpen={showRemoveTestCaseConfirm}
+        onClose={() => setShowRemoveTestCaseConfirm(false)}
+        onConfirm={handleConfirmRemoveTestCase}
+        title='Xóa test case'
+        message='Bạn có chắc chắn muốn xóa test case này khỏi đợt kiểm thử?'
+        confirmText='Xóa'
+        confirmButtonColor='bg-red-600 hover:bg-red-700'
+      />
+
+      <ConfirmModal
+        isOpen={showBulkRemoveConfirm}
+        onClose={() => setShowBulkRemoveConfirm(false)}
+        onConfirm={handleConfirmBulkRemove}
+        title='Xóa nhiều test case'
+        message={`Bạn có chắc chắn muốn xóa ${selectedTestCases.size} test cases khỏi đợt kiểm thử?`}
+        confirmText='Xóa'
+        confirmButtonColor='bg-red-600 hover:bg-red-700'
+      />
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { X, Save, Trash2, Upload, History, Download, FileText } from 'lucide-react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import StepsEditor from './StepsEditor'
-import DeleteConfirmModal from './DeleteConfirmModal'
+import ConfirmModal from '../../../../components/ConfirmModal'
 import type { TestCase, TestSuite, TestCaseStep } from '../../../../types/testcase'
 import {
   getTestCaseByIdAPI,
@@ -42,6 +42,8 @@ export default function TestCaseDetailModal({
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [attachmentToDelete, setAttachmentToDelete] = useState<number | null>(null)
+  const [showDeleteAttachmentConfirm, setShowDeleteAttachmentConfirm] = useState(false)
   const [modalWidth, setModalWidth] = useState(900)
   const [isResizing, setIsResizing] = useState(false)
 
@@ -137,7 +139,11 @@ export default function TestCaseDetailModal({
     }
   }
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true)
+  }
+
+  const handleConfirmDelete = async () => {
     if (!testCase) return
 
     setIsDeleting(true)
@@ -172,19 +178,25 @@ export default function TestCaseDetailModal({
     }
   }
 
-  const handleDeleteAttachment = async (attachmentId: number) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa file đính kèm này?')) {
-      return
-    }
+  const handleDeleteAttachmentClick = (attachmentId: number) => {
+    setAttachmentToDelete(attachmentId)
+    setShowDeleteAttachmentConfirm(true)
+  }
+
+  const handleConfirmDeleteAttachment = async () => {
+    if (!attachmentToDelete) return
 
     try {
-      await deleteAttachmentAPI(attachmentId)
+      await deleteAttachmentAPI(attachmentToDelete)
       if (testCase) {
         loadTestCase(testCase.testcase_id)
       }
     } catch (err) {
       console.error('Failed to delete attachment:', err)
       alert('Xóa file đính kèm thất bại')
+    } finally {
+      setAttachmentToDelete(null)
+      setShowDeleteAttachmentConfirm(false)
     }
   }
 
@@ -237,23 +249,23 @@ export default function TestCaseDetailModal({
 
       {/* Modal with Resize Handle */}
       <div
-        className='fixed top-0 right-0 h-full bg-white shadow-2xl z-[1000] flex'
+        className='fixed top-0 right-0 h-full bg-white shadow-2xl z-[1000] flex flex-col md:flex-row max-w-full w-full md:w-[900px] transition-all'
         style={{ width: `${modalWidth}px` }}
       >
         {/* Resize Handle */}
         <div
-          className='w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize transition-colors flex-shrink-0'
+          className='w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize transition-colors flex-shrink-0 hidden md:block'
           onMouseDown={handleMouseDown}
         />
 
         {/* Modal Content */}
-        <div className='flex flex-col flex-1 h-full'>
+        <div className='flex-1 flex flex-col h-full overflow-auto'>
           {/* Header */}
           <div className='flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0'>
-            <div className='flex items-center gap-3 flex-1 min-w-0'>
+            <div className='flex items-center gap-3 flex-1 max-w-[calc(100%-30rem)]'>
               <FileText size={24} className='text-blue-600 flex-shrink-0' />
-              <div className='min-w-0'>
-                <h2 className='text-xl font-bold text-gray-900 truncate'>
+              <div className='flex-1 min-w-0'>
+                <h2 className='text-xl font-bold text-gray-900 truncate '>
                   {testCase ? `${testCase.testcase_code} - ${testCase.name}` : 'Tạo testcase mới'}
                 </h2>
                 {testCase && (
@@ -270,16 +282,18 @@ export default function TestCaseDetailModal({
                   <button
                     onClick={() => setShowVersionHistory(true)}
                     className='flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors'
+                    title="Lịch sử"
                   >
                     <History size={18} />
-                    Lịch sử
+                    {modalWidth >= 768 && <span>Lịch sử</span>}
                   </button>
                   <button
-                    onClick={() => setShowDeleteConfirm(true)}
+                    onClick={handleDeleteClick}
                     className='flex items-center gap-2 px-3 py-2 border border-red-300 text-red-700 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors'
+                    title="Xóa"
                   >
                     <Trash2 size={18} />
-                    Xóa
+                    {modalWidth >= 768 && <span>Xóa</span>}
                   </button>
                 </>
               )}
@@ -319,9 +333,9 @@ export default function TestCaseDetailModal({
                   />
                 </div>
 
-                <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+                <div className={`grid grid-cols-1 gap-6 lg:grid-cols-3`}>
                   {/* Left Column - Main Content (Span 2) */}
-                  <div className='lg:col-span-2 space-y-6'>
+                  <div className={`lg:col-span-2 space-y-6`}>
                     {/* Description & Pre-condition */}
                     <div className='bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-6'>
                       <div>
@@ -462,7 +476,7 @@ export default function TestCaseDetailModal({
                                     <Download size={14} />
                                   </button>
                                   <button
-                                    onClick={() => handleDeleteAttachment(att.attachment_id)}
+                                    onClick={() => handleDeleteAttachmentClick(att.attachment_id)}
                                     className='p-1.5 hover:bg-red-100 rounded text-red-600'
                                   >
                                     <Trash2 size={14} />
@@ -544,13 +558,26 @@ export default function TestCaseDetailModal({
         />
       )}
       {/* Delete Confirmation Modal */}
-      <DeleteConfirmModal
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
         isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
         title='Xóa testcase'
         message={`Bạn có chắc chắn muốn xóa testcase "${testCase?.name}" không? Hành động này không thể hoàn tác.`}
-        onConfirm={handleDelete}
-        onCancel={() => setShowDeleteConfirm(false)}
-        isDeleting={isDeleting}
+        confirmText='Xóa'
+        confirmButtonColor='bg-red-600 hover:bg-red-700'
+        isLoading={isDeleting}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteAttachmentConfirm}
+        onClose={() => setShowDeleteAttachmentConfirm(false)}
+        onConfirm={handleConfirmDeleteAttachment}
+        title='Xóa file đính kèm'
+        message='Bạn có chắc chắn muốn xóa file đính kèm này?'
+        confirmText='Xóa'
+        confirmButtonColor='bg-red-600 hover:bg-red-700'
       />
     </>
   )

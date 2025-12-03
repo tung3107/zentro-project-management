@@ -188,14 +188,14 @@ export default function TestCaseTab() {
 
           <div className='flex items-center gap-2'>
             {/* AI Assistant */}
-            <button
+            {/* <button
               onClick={() => setShowAIChat(true)}
               className='flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg'
               title='AI Assistant'
             >
               <Bot size={18} />
               <span className='hidden xl:inline'>AI Assistant</span>
-            </button>
+            </button> */}
 
             {/* Create buttons */}
             <button

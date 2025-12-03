@@ -144,8 +144,9 @@ exports.authorizeProject = (resource, action) => {
 
 exports.logout = catchAsync(async (req, res, next) => {
   const user_id = req.user.user_id;
+  const { refreshToken } = req.body; // Expect refreshToken in body for logout to clear specific device
 
-  const message = await new AuthService().logout(user_id);
+  const message = await new AuthService().logout(user_id, refreshToken);
 
   res.status(200).json({
     status: "success",
@@ -155,13 +156,33 @@ exports.logout = catchAsync(async (req, res, next) => {
 
 exports.login = catchAsync(async (req, res, next) => {
   let { email, password, isRemember } = req.body;
-  const user = await new AuthService().login(email, password, isRemember);
+  const ipAddress = req.ip || req.connection.remoteAddress;
+  const userAgent = req.headers["user-agent"];
+  
+  const user = await new AuthService().login(email, password, isRemember, ipAddress, userAgent);
 
   res.status(200).json({
     status: "success",
     data: {
       user,
     },
+  });
+});
+
+exports.getDevices = catchAsync(async (req, res, next) => {
+  const devices = await new AuthService().getDevices(req.user.user_id);
+  res.status(200).json({
+    status: "success",
+    data: { devices }
+  });
+});
+
+exports.revokeDevice = catchAsync(async (req, res, next) => {
+  const { deviceId } = req.params;
+  const message = await new AuthService().revokeDevice(req.user.user_id, deviceId);
+  res.status(200).json({
+    status: "success",
+    message
   });
 });
 

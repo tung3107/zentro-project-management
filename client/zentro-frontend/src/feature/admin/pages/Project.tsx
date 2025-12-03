@@ -79,6 +79,9 @@ export default function Project() {
       <>
         <h2 className='title'>Bạn chắc chắn chưa?</h2>
         <p className='subtitle'>{`Bạn muốn xóa dự án ${project.project_name}`}</p>
+        <p className='subtitle'>
+          Tất cả thông tin liên quan sẽ bị xóa, bao gồm công việc, testcase, bộ testcase, đợt kiểm thử,...
+        </p>
       </>
     )
   }
@@ -149,12 +152,12 @@ export default function Project() {
 
             {
               field: 'leader_name',
-              header: 'Leader/PM',
+              header: 'Trưởng nhóm',
               sortable: true,
               filterable: true,
               filterType: 'dropdown',
               apiEndPoint: '/users/leader',
-              placeholder: 'leader',
+              placeholder: 'Trưởng nhóm',
               apiQuery: 'leader_id',
               width: '30px',
               body: (row) => (row.members && row.members.length > 0 ? row.leader_name : 'N/A')

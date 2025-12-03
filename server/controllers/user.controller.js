@@ -136,3 +136,15 @@ exports.getOneUser = catchAsync(async (req, res, next) => {
     data,
   });
 });
+
+exports.updateTimezone = catchAsync(async (req, res, next) => {
+  const { timezone } = req.body;
+  const { user_id } = req.user;
+
+  const message = await new UserService().updateTimezone(user_id, timezone);
+
+  res.status(200).json({
+    status: "success",
+    message,
+  });
+});

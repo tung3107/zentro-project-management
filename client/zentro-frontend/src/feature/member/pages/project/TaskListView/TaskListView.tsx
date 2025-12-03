@@ -11,6 +11,7 @@ import type { Task } from '../../../../../types/task'
 import { getTasksListAPI, updateTaskAPI, deleteTask } from '../../../service/task.service'
 import AddTaskCom from '../../../components/task/AddTaskCom'
 import TaskDetailModal from '../../../components/task/TaskDetailModal'
+import ConfirmModal from '../../../../../components/ConfirmModal'
 
 // Subtask components
 import SearchBar from '../../../components/subtask/SearchBar'
@@ -49,6 +50,7 @@ export default function TaskListView() {
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([])
 
   const [showBulkStatusModal, setShowBulkStatusModal] = useState(false)
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
 
   const { permissions } = useProjectRole()
 
@@ -196,11 +198,14 @@ export default function TaskListView() {
   }
 
   // Handle bulk delete
-  const handleBulkDelete = () => {
+  const handleBulkDeleteClick = () => {
     if (selectedTasks.length === 0) return
-    if (confirm(`Bạn có chắc chắn muốn xóa ${selectedTasks.length} công việc?`)) {
-      bulkDeleteMutation.mutate(selectedTasks.map((t) => t.task_id!))
-    }
+    setShowBulkDeleteConfirm(true)
+  }
+
+  const handleConfirmBulkDelete = () => {
+    bulkDeleteMutation.mutate(selectedTasks.map((t) => t.task_id!))
+    setShowBulkDeleteConfirm(false)
   }
 
   // Handle bulk status update
@@ -470,10 +475,20 @@ export default function TaskListView() {
       <BulkActionsBar
         selectedCount={selectedTasks.length}
         onBulkEdit={() => setShowBulkStatusModal(true)}
-        onBulkDelete={handleBulkDelete}
+        onBulkDelete={handleBulkDeleteClick}
       />
 
       <Toast ref={toastRef} />
+
+      <ConfirmModal
+        isOpen={showBulkDeleteConfirm}
+        onClose={() => setShowBulkDeleteConfirm(false)}
+        onConfirm={handleConfirmBulkDelete}
+        title='Xóa nhiều công việc'
+        message={`Bạn có chắc chắn muốn xóa ${selectedTasks.length} công việc? Hành động này không thể hoàn tác.`}
+        confirmText='Xóa'
+        confirmButtonColor='bg-red-600 hover:bg-red-700'
+      />
     </div>
   )
 }

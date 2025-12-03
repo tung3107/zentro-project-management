@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Sparkles, Send, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { OverlayPanel } from 'primereact/overlaypanel'
 import aiChatService from '../../service/aichat.service'
 import { markdownToHtml } from '../../../../util/markdownToHtml'
 
@@ -10,7 +11,7 @@ interface AIDescriptionButtonProps {
 }
 
 export default function AIDescriptionButton({ projectId, onDescriptionGenerated }: AIDescriptionButtonProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const op = useRef<OverlayPanel>(null)
   const [prompt, setPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -27,7 +28,7 @@ export default function AIDescriptionButton({ projectId, onDescriptionGenerated 
       const htmlDescription = markdownToHtml(markdownDescription)
       onDescriptionGenerated(htmlDescription)
       toast.success('Đã tạo mô tả bằng AI!')
-      setIsOpen(false)
+      op.current?.hide()
       setPrompt('')
     } catch (error) {
       console.error('Failed to generate description:', error)
@@ -41,33 +42,32 @@ export default function AIDescriptionButton({ projectId, onDescriptionGenerated 
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       handleGenerate()
     } else if (e.key === 'Escape') {
-      setIsOpen(false)
-      setPrompt('')
+      op.current?.hide()
     }
   }
 
   return (
-    <div className='relative'>
-      {!isOpen ? (
-        <button
-          type='button'
-          onClick={() => setIsOpen(true)}
-          className='inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors'
-          title='Tạo mô tả bằng AI'
-        >
-          <Sparkles size={16} />
-          <span>Tạo bằng AI</span>
-        </button>
-      ) : (
-        <div className='absolute top-0 left-0 z-50 w-96 bg-white border border-purple-300 rounded-lg shadow-xl p-4'>
-          <div className='flex items-center justify-between mb-3'>
+    <>
+      <button
+        type='button'
+        onClick={(e) => op.current?.toggle(e)}
+        className='inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors'
+        title='Tạo mô tả bằng AI'
+      >
+        <Sparkles size={16} />
+        <span>Tạo bằng AI</span>
+      </button>
+
+      <OverlayPanel ref={op} className='w-96' onHide={() => setPrompt('')}>
+        <div className='flex flex-col gap-3'>
+          <div className='flex items-center justify-between'>
             <div className='flex items-center gap-2'>
               <Sparkles size={18} className='text-purple-600' />
               <h3 className='text-sm font-semibold text-gray-900'>Tạo mô tả bằng AI</h3>
             </div>
             <button
               onClick={() => {
-                setIsOpen(false)
+                op.current?.hide()
                 setPrompt('')
               }}
               className='p-1 hover:bg-gray-100 rounded transition-colors'
@@ -87,7 +87,7 @@ export default function AIDescriptionButton({ projectId, onDescriptionGenerated 
             disabled={isLoading}
           />
 
-          <div className='flex items-center justify-between mt-3'>
+          <div className='flex items-center justify-between'>
             <p className='text-xs text-gray-500'>Ctrl+Enter để tạo, Esc để đóng</p>
             <button
               onClick={handleGenerate}
@@ -111,7 +111,7 @@ export default function AIDescriptionButton({ projectId, onDescriptionGenerated 
             </button>
           </div>
         </div>
-      )}
-    </div>
+      </OverlayPanel>
+    </>
   )
 }

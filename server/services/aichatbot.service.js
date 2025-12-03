@@ -13,15 +13,10 @@ class AiChatbotService {
     this.model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
   }
 
-  /**
-   * Generate AI response based on user query and project context
-   */
   async generateResponse(userId, projectId, userMessage) {
     try {
-      // Get project context
       const projectContext = await this.getProjectContext(userId, projectId);
 
-      // Build system prompt
       const systemPrompt = this.buildSystemPrompt(projectContext);
 
       // Generate response
@@ -61,13 +56,11 @@ class AiChatbotService {
    */
   async getProjectContext(userId, projectId) {
     try {
-      // Get project info
       const project = await Project.findByPk(projectId);
       if (!project) {
         throw new ApiError("Không tìm thấy dự án", 404);
       }
 
-      // Get all tasks in project with details
       const tasks = await Task.findAll({
         where: { project_id: projectId },
         include: [
@@ -101,13 +94,11 @@ class AiChatbotService {
         order: [["created_at", "DESC"]],
       });
 
-      // Get sprints
       const sprints = await Sprint.findAll({
         where: { project_id: projectId },
         order: [["start_date", "DESC"]],
       });
 
-      // Get members
       const members = await Member.findAll({
         where: { project_id: projectId, is_delete: false },
         include: [
@@ -119,7 +110,6 @@ class AiChatbotService {
         ],
       });
 
-      // Calculate statistics
       const stats = this.calculateProjectStats(tasks, sprints);
 
       return {
@@ -156,6 +146,17 @@ class AiChatbotService {
         t.status?.status_name?.toLowerCase().includes("cần làm") ||
         t.status?.status_name?.toLowerCase().includes("to do")
     ).length;
+    const blockedTasks = tasks.filter(
+      (t) =>
+        t.status?.status_name?.toLowerCase().includes("chặn") ||
+        t.status?.status_name?.toLowerCase().includes("blocked")
+    ).length;
+    const cancelledTasks = tasks.filter(
+      (t) =>
+        t.status?.status_name?.toLowerCase().includes("hủy") ||
+        t.status?.status_name?.toLowerCase().includes("cancelled") ||
+        t.status?.status_name?.toLowerCase().includes("canceled")
+    ).length;
 
     const highPriorityTasks = tasks.filter((t) => t.priority >= 3).length;
     const overdueTasks = tasks.filter(
@@ -181,6 +182,8 @@ class AiChatbotService {
       completedTasks,
       inProgressTasks,
       todoTasks,
+      blockedTasks,
+      cancelledTasks,
       highPriorityTasks,
       overdueTasks,
       activeSprints,
@@ -191,9 +194,6 @@ class AiChatbotService {
     };
   }
 
-  /**
-   * Build system prompt with project context
-   */
   buildSystemPrompt(context) {
     const { project, tasks, sprints, members, stats, userId } = context;
 
@@ -247,6 +247,8 @@ Thời gian: ${new Date(project.start_date).toLocaleDateString(
 - Hoàn thành: ${stats.completedTasks} (${stats.completionRate}%)
 - Đang làm: ${stats.inProgressTasks}
 - Cần làm: ${stats.todoTasks}
+- Bị chặn: ${stats.blockedTasks}
+- Đã hủy: ${stats.cancelledTasks}
 - Ưu tiên cao: ${stats.highPriorityTasks}
 - Quá hạn: ${stats.overdueTasks}
 - Sprint đang chạy: ${stats.activeSprints}
@@ -263,7 +265,7 @@ ${sprintsSummary}
 👥 THÀNH VIÊN:
 ${membersSummary}
 
-🎯 HƯỚNG DẪN:
+HƯỚNG DẪN:
 1. Trả lời bằng tiếng Việt, ngắn gọn, rõ ràng, thân thiện
 2. Khi người dùng hỏi về task, hãy tìm theo ID hoặc tên (tìm gần đúng)
 3. Khi tóm tắt task, bao gồm: ID, tên, trạng thái, người làm, sprint, deadline, mô tả
@@ -282,7 +284,7 @@ SẴN SÀNG HỖ TRỢ!`;
       0: "Thấp",
       1: "Trung bình",
       2: "Cao",
-      4: "Cần gấp",
+      3: "Cần gấp",
     };
     return priorities[priority] || "N/A";
   }

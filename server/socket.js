@@ -2,9 +2,8 @@
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 
-let io; // biến tạm để lưu instance socket
+let io;
 
-// Map để lưu user_id -> socket_id
 const userSockets = new Map();
 
 function initSocket(server) {
@@ -15,7 +14,6 @@ function initSocket(server) {
     },
   });
 
-  // Middleware để verify token
   io.use((socket, next) => {
     const token = socket.handshake.auth.token;
 
@@ -185,9 +183,7 @@ function initSocket(server) {
     // ====================
     socket.on("join_project", (projectId) => {
       socket.join(`project_${projectId}`);
-      console.log(
-        `User ${socket.userId} joined project room ${projectId}`
-      );
+      console.log(`User ${socket.userId} joined project room ${projectId}`);
     });
 
     // ====================
@@ -195,9 +191,7 @@ function initSocket(server) {
     // ====================
     socket.on("leave_project", (projectId) => {
       socket.leave(`project_${projectId}`);
-      console.log(
-        `User ${socket.userId} left project room ${projectId}`
-      );
+      console.log(`User ${socket.userId} left project room ${projectId}`);
     });
 
     // ====================

@@ -13,7 +13,7 @@ export interface ApiErrorResponse {
 
 export const useLogin = () => {
   const queryClient = useQueryClient()
-  const { setUser, setTokens } = useAuthStore()
+  const { setUser, setTokens, setIsChangePassword } = useAuthStore()
   const navigate = useNavigate()
 
   return useMutation({
@@ -23,6 +23,7 @@ export const useLogin = () => {
 
       setTokens(accessToken, refreshToken)
       setUser(user)
+      setIsChangePassword(user.is_change_password || false)
 
       queryClient.setQueryData(['user'], user)
       toast.success('Đăng nhập thành công')
@@ -33,7 +34,7 @@ export const useLogin = () => {
       } else if (role.includes('member')) {
         navigate('/member', { replace: true })
       } else {
-        navigate('/', { replace: true }) // fallback
+        navigate('/', { replace: true })
       }
     },
     onError: (err) => {

@@ -9,6 +9,7 @@ import { MoreVertical, Edit2, Trash2 } from 'lucide-react'
 import { useAuthStore } from '../../../auth/stores/authStore'
 import CommentEditor from './CommentEditor'
 import { useParams } from 'react-router-dom'
+import ConfirmModal from '../../../../components/ConfirmModal'
 
 interface CommentWithUser extends Comment {
   user?: {
@@ -42,6 +43,8 @@ const CommentList: React.FC<CommentListProps> = ({ taskId, reload }) => {
   const { user } = useAuthStore()
   const { projectId } = useParams<{ projectId: string }>()
   const menuRef = useRef<HTMLDivElement>(null)
+  const [commentToDelete, setCommentToDelete] = useState<number | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const fetchComments = async () => {
     try {
@@ -110,13 +113,19 @@ const CommentList: React.FC<CommentListProps> = ({ taskId, reload }) => {
     // Don't close immediately - let the popup handle its own hover
   }
 
-  const handleDeleteComment = async (commentId: number) => {
-    if (!window.confirm('Bạn có chắc muốn xóa bình luận này?')) return
+  const handleDeleteClick = (commentId: number) => {
+    setCommentToDelete(commentId)
+    setShowDeleteConfirm(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!commentToDelete) return
 
     try {
-      await deleteComment(commentId)
-      setComments(comments.filter((c) => c.comment_id !== commentId))
+      await deleteComment(commentToDelete)
+      setComments(comments.filter((c) => c.comment_id !== commentToDelete))
       setActiveMenu(null)
+      setCommentToDelete(null)
     } catch (error) {
       console.error('Error deleting comment:', error)
       alert('Không thể xóa bình luận. Vui lòng thử lại.')
@@ -252,7 +261,7 @@ const CommentList: React.FC<CommentListProps> = ({ taskId, reload }) => {
                               Chỉnh sửa
                             </button>
                             <button
-                              onClick={() => handleDeleteComment(c.comment_id)}
+                              onClick={() => handleDeleteClick(c.comment_id)}
                               className='w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors'
                             >
                               <Trash2 size={14} />
@@ -357,6 +366,17 @@ const CommentList: React.FC<CommentListProps> = ({ taskId, reload }) => {
           )}
         </div>
       )}
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title='Xóa bình luận'
+        message='Bạn có chắc chắn muốn xóa bình luận này?'
+        confirmText='Xóa'
+        confirmButtonColor='bg-red-600 hover:bg-red-700'
+      />
     </div>
   )
 }

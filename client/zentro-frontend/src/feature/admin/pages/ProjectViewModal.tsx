@@ -20,12 +20,12 @@ const Backdrop = styled.div`
 
 const ModalContainer = styled.div`
   background: white;
-  width: 95%;
-  height: 90%;
+  width: 100%;
+  height: 100%;
   padding: 0;
   position: relative;
   overflow-y: overlay;
-  border-radius: 16px;
+  border-radius: 0;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
   animation: fadeIn 0.4s ease-in-out;
 

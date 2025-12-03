@@ -51,7 +51,18 @@ class MemberService {
           {
             model: Member,
             as: "memberships",
-            where: { project_id: project_id },
+            where: { project_id: project_id, is_delete: 0 },
+            include: [
+              {
+                model: Role,
+                as: "role",
+                where: {
+                  role_name: {
+                    [Op.ne]: "Người xem",
+                  },
+                },
+              },
+            ],
           },
         ],
         attributes: [
@@ -140,7 +151,7 @@ class MemberService {
 
       if (!isExisted) throw new ApiError("Không tìm thấy project", 400);
 
-      return sequelize.transaction(async (t) => {
+      const createdMembers = await sequelize.transaction(async (t) => {
         for (const m of members) {
           const user_id = m.user.user_id;
           const role_id = m.role.role_id;
@@ -183,10 +194,56 @@ class MemberService {
           }
         }
         return Member.findAll({
-          where: { project_id: project_id },
+          where: { project_id: project_id, is_delete: 0 },
           transaction: t,
         });
       });
+
+      // Tạo group chat cho project với tất cả members
+      try {
+        const ChatService = require("./chat.service");
+        const chatService = new ChatService();
+
+        // Lấy tất cả user_id của members
+        const memberUserIds = createdMembers.map((m) => m.user_id);
+
+        // Chỉ tạo chat nếu có ít nhất 2 members
+        if (memberUserIds.length >= 2) {
+          // Tìm leader (người tạo project) - có thể là người đầu tiên hoặc người có role Trưởng nhóm
+          const leaderMember = createdMembers.find(
+            (m) => m.role_id === 7 // 7 là role_id của Trưởng nhóm
+          );
+          const createdBy = leaderMember
+            ? leaderMember.user_id
+            : memberUserIds[0];
+
+          // Lọc ra các members khác (không bao gồm creator)
+          // Note: createChat sẽ tự động thêm creator vào, nên chỉ cần pass members khác
+          const otherMembers = memberUserIds.filter((id) => id !== createdBy);
+
+          // Đảm bảo có ít nhất 1 member khác ngoài creator (tổng >= 2 người)
+          if (otherMembers.length >= 1) {
+            // Tạo group chat
+            await chatService.createChat({
+              name: `${isExisted.project_name} - Nhóm dự án`,
+              isGroup: true,
+              members: otherMembers,
+              createdBy: createdBy,
+              chatColor: "#0085FF", // Màu xanh cho chat dự án
+            });
+
+            console.log(
+              `Đã tạo group chat cho project ${project_id} với ${memberUserIds.length} members`
+            );
+          }
+        }
+      } catch (chatError) {
+        // Log error nhưng không throw để không ảnh hưởng đến việc tạo members
+        console.error("Lỗi khi tạo group chat cho project:", chatError.message);
+        console.error("Chi tiết lỗi:", chatError);
+      }
+
+      return createdMembers;
     } catch (error) {
       throw new ApiError(`Error: ${error.message}`, 400);
     }
@@ -269,6 +326,9 @@ class MemberService {
             model: Role,
             as: "Role",
             attributes: ["role_name", "role_id"],
+            where: {
+              role_name: { [Op.in]: ["Member"] },
+            },
           },
           {
             model: Member,

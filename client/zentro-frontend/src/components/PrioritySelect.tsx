@@ -22,6 +22,7 @@ interface PrioritySelectProps {
   onChange: (value: number) => void
   className?: string
   showClear?: boolean
+  appendTo?: 'self' | HTMLElement | null | undefined
 }
 
 const StyledDropdown = styled(Dropdown)`
@@ -52,7 +53,7 @@ const StyledDropdown = styled(Dropdown)`
   }
 `
 
-const PrioritySelect: React.FC<PrioritySelectProps> = ({ value, onChange, className, showClear = true }) => {
+const PrioritySelect: React.FC<PrioritySelectProps> = ({ value, onChange, className, showClear = true, appendTo }) => {
   const itemTemplate = (option: PriorityOption) => (
     <div className='flex items-center gap-2' style={{ color: option.color }}>
       {option.icon}
@@ -86,6 +87,7 @@ const PrioritySelect: React.FC<PrioritySelectProps> = ({ value, onChange, classN
       placeholder='Chọn độ ưu tiên'
       className={`w-[200px] ${className}`}
       showClear={showClear}
+      appendTo={appendTo}
     />
   )
 }

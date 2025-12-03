@@ -243,7 +243,7 @@ export default function ReusableTable<T>({
           })}
 
           {(onView || onEdit || onDelete) && (
-            <Column header='Actions' body={actionCellTemplate} style={{ width: '8rem' }} />
+            <Column header='Hành động' body={actionCellTemplate} style={{ width: '8rem' }} />
           )}
         </DataTable>
       </div>

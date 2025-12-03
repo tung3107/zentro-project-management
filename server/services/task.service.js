@@ -406,7 +406,7 @@ class TaskService {
     }
   }
 
-  async searchTaskBackLog(user_id, project_id, query) {
+  async searchTaskBackLog(user_id, project_id, query, filters = {}) {
     try {
       const result = {};
 
@@ -435,6 +435,17 @@ class TaskService {
         type: { [Op.ne]: "subtask" }, // Không lấy subtasks
         ...(query ? { title: { [Op.like]: `%${query}%` } } : {}), // chỉ thêm điều kiện nếu có query
       };
+
+      // Add filters to backlog
+      if (filters.assignee_id) {
+        backlogWhere.assignee_id = filters.assignee_id;
+      }
+      if (filters.priority !== undefined && filters.priority !== null) {
+        backlogWhere.priority = filters.priority;
+      }
+      if (filters.type) {
+        backlogWhere.type = filters.type;
+      }
 
       const backlog = await Task.findAll({
         where: backlogWhere,
@@ -468,12 +479,22 @@ class TaskService {
       const sprintTaskWhere = {
         type: { [Op.ne]: "subtask" }, // Không lấy subtasks
         project_id: project_id,
-        status: { [Op.ne]: "completed" },
         ...(query ? { title: { [Op.like]: `%${query}%` } } : {}), // Nếu query rỗng thì không lọc theo title
       };
 
+      // Add filters to sprint tasks
+      if (filters.assignee_id) {
+        sprintTaskWhere.assignee_id = filters.assignee_id;
+      }
+      if (filters.priority !== undefined && filters.priority !== null) {
+        sprintTaskWhere.priority = filters.priority;
+      }
+      if (filters.type) {
+        sprintTaskWhere.type = filters.type;
+      }
+
       const sprints = await Sprint.findAll({
-        where: { project_id },
+        where: { project_id, status: { [Op.ne]: "completed" } },
         include: [
           {
             model: Task,
@@ -1081,6 +1102,15 @@ class TaskService {
               "avatar",
               "email",
             ],
+            include: [
+              {
+                model: Member,
+                as: "memberships",
+                where: { project_id: project_id },
+                required: false,
+                attributes: ["is_delete"],
+              },
+            ],
           },
           {
             model: ProjectStatus,
@@ -1100,6 +1130,15 @@ class TaskService {
                   "last_name",
                   "avatar",
                   "email",
+                ],
+                include: [
+                  {
+                    model: Member,
+                    as: "memberships",
+                    where: { project_id: project_id },
+                    required: false,
+                    attributes: ["is_delete"],
+                  },
                 ],
               },
               {

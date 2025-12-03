@@ -21,6 +21,7 @@ export interface ProjectSummary {
     name: string
     avatar: string | null
     percent: number
+    is_deleted?: boolean
   }>
 }
 

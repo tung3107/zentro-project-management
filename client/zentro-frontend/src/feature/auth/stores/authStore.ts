@@ -40,7 +40,7 @@ export const useAuthStore = create<AuthState>()(
       isUnauthorized: false,
       isPermLoading: false,
       permissions: [],
-      is_change_password: true,
+      is_change_password: false,
       projectPermissions: {},
 
       setProjectPermissions: (projectPermissions) => set({ projectPermissions }),
@@ -62,7 +62,8 @@ export const useAuthStore = create<AuthState>()(
           permissions: undefined,
           refreshToken: null,
           isAuthenticated: false,
-          projectPermissions: {}
+          projectPermissions: {},
+          is_change_password: false
         })
     }),
     {

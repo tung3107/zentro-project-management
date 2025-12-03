@@ -236,7 +236,7 @@ export default function EditProjectCom({
               className='inline-flex'
               style={{ fontSize: '14px', fontWeight: 400, lineHeight: '150%', color: '#717D84' }}
             >
-              Leader: {project.leader_name}
+              Trưởng nhóm: {project.leader_name}
               {/* members[0]?.user?. */}
               <span style={{ margin: '0 10px', color: '#000000ff' }}>&middot;</span>
               ID: {project?.project_id}

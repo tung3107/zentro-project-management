@@ -21,6 +21,9 @@ import Chat from './feature/member/pages/Chat'
 import Profile from './feature/member/pages/Profile'
 import ProfileEdit from './feature/member/pages/ProfileEdit'
 import Settings from './feature/member/pages/Settings'
+import AdminProfile from './feature/admin/pages/Profile'
+import AdminProfileEdit from './feature/admin/pages/ProfileEdit'
+import AdminSettings from './feature/admin/pages/Settings'
 import MemberMainLayout from './feature/member/components/layout/MemberMainLayout'
 import AiChatbot from './feature/member/components/ai_chatbot/AiChatbot'
 import HomePage from './feature/member/pages/HomePage'
@@ -108,6 +111,10 @@ function App() {
                   </Can>
                 }
               />
+              <Route path='profile' element={<AdminProfile />} />
+              <Route path='profile/edit' element={<AdminProfileEdit />} />
+              <Route path='profile/:userId' element={<AdminProfile />} />
+              <Route path='settings' element={<AdminSettings />} />
             </Route>
             <Route
               path='member'

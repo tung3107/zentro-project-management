@@ -8,6 +8,9 @@ const {
   protectRoute,
   logout,
   resetPasswordFirstLogin,
+  changePassword,
+  getDevices,
+  revokeDevice,
 } = require("../controllers/auth.controller");
 
 const routes = express.Router();
@@ -24,5 +27,9 @@ routes.post(
   protectRoute,
   resetPasswordFirstLogin
 );
+routes.post("/change-password", protectRoute, changePassword);
+
+routes.get("/devices", protectRoute, getDevices);
+routes.delete("/devices/:deviceId", protectRoute, revokeDevice);
 
 module.exports = routes;

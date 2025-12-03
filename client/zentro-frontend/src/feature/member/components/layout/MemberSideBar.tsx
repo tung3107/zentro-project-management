@@ -319,7 +319,7 @@ export default function MemberSideBar({
 
           {projects.length === 0 ? (
             <div className='flex flex-col items-center text-center mt-8 px-2'>
-              <img src='/Not Found.png' alt='No Projects Found' className='w-32 h-32 object-contain opacity-70' />
+              <img src='/Not Found.png' alt='Không tìm thấy dự án' className='w-32 h-32 object-contain opacity-70' />
               {!isCollapsed && (
                 <p className='text-gray-500 text-xs mt-4 leading-relaxed'>
                   Bạn chưa được thêm vào dự án nào. <br />

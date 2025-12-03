@@ -10,14 +10,18 @@ import type { Task } from '../../../../types/task'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { getCurrentSprintDetails } from '../../service/sprint.service'
 import { getBoard, getBurndownChart, searchBoard } from '../../service/task.service'
-import api from "../../../../util/axiosClient"
+import api from '../../../../util/axiosClient'
 import AddTaskCom from '../task/AddTaskCom'
 import { toast } from 'sonner'
 import FilterMenu from '../modal/FilterMenu'
 import BurndownModal from '../modal/BurndownModal'
 import OverlayCenterModal from '../../../../components/OverlayCenterModal'
 import TaskDetailModal from '../task/TaskDetailModal'
-
+import CompleteSprintModal from '../sprint/CompleteSprintModal'
+import { completeSprintAPI, getAllSprintsAPI } from '../../service/sprint.service'
+import type { ApiErrorResponse } from '../../../auth/hooks/useAuth'
+import type { AxiosError } from 'axios'
+import SprintBoardHeader from './SprintBoardHeader'
 
 export default function BoardTab() {
   const [query, setQuery] = useState('')
@@ -34,6 +38,9 @@ export default function BoardTab() {
   const [members, setMembers] = useState<any[]>([])
   const [statuses, setStatuses] = useState<any[]>([])
   const [burndownData, setBurndownData] = useState<any>(null)
+  const [sprintToComplete, setSprintToComplete] = useState<Sprint | null>(null)
+  const [allSprints, setAllSprints] = useState<Sprint[]>([])
+  const [completedStatusIds, setCompletedStatusIds] = useState<number[]>([])
   const { projectId } = useParams()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -62,7 +69,18 @@ export default function BoardTab() {
 
         // Load statuses for task detail modal
         const statusesRes = await api.get(`/status/project/${projectId}`)
-        setStatuses(statusesRes.data.data || [])
+        const statusesData = statusesRes.data.data || []
+        setStatuses(statusesData)
+
+        // Load all sprints for the complete sprint modal
+        const allSprintsRes = await getAllSprintsAPI(projectId)
+        setAllSprints(allSprintsRes.data || [])
+
+        // Find "done" or "completed" status IDs
+        const completedIds = statusesData
+          .filter((s: any) => s.name?.toLowerCase().includes('done') || s.name?.toLowerCase().includes('hoàn thành'))
+          .map((s: any) => s.status_id)
+        setCompletedStatusIds(completedIds)
       } catch (err) {
         console.error(err)
       } finally {
@@ -103,59 +121,59 @@ export default function BoardTab() {
 
   // Socket
   useEffect(() => {
-  if (projectId) {
-    console.log('🔌 [Socket] Joining project:', projectId)
-    socketClient.joinProject(projectId)
-  }
-
-  const handleTaskCreated = (task: any) => {
-    console.log('✅ [Socket] Task created:', task)
-    setColumns((prev) => {
-      const newCols = [...prev]
-      const col = newCols.find((c) => c.id === task.status_id)
-      if (col) col.tasks = [task, ...col.tasks]
-      return newCols
-    })
-  }
-
-  const handleTaskUpdated = (updatedTask: any) => {
-    console.log('🔄 [Socket] Task updated:', updatedTask)
-    setColumns((prev) => {
-      const newCols = prev.map((col) => ({
-        ...col,
-        tasks: col.tasks.filter((t) => t.task_id !== updatedTask.task_id)
-      }))
-      const targetCol = newCols.find((c) => c.id === updatedTask.status_id)
-      if (targetCol) targetCol.tasks = [updatedTask, ...targetCol.tasks]
-      return newCols
-    })
-  }
-
-  const handleTaskDeleted = ({ task_id }: { task_id: string }) => {
-    console.log('🗑️ [Socket] Task deleted:', task_id)
-    setColumns((prev) =>
-      prev.map((col) => ({
-        ...col,
-        tasks: col.tasks.filter((t) => t.task_id !== task_id)
-      }))
-    )
-  }
-
-  console.log('👂 [Socket] Registering event listeners...')
-  socketClient.onTaskCreated(handleTaskCreated)
-  socketClient.onTaskUpdated(handleTaskUpdated)
-  socketClient.onTaskDeleted(handleTaskDeleted)
-
-  return () => {
-    console.log('🔌 [Socket] Leaving project:', projectId)
     if (projectId) {
-      socketClient.leaveProject(projectId)
+      console.log('🔌 [Socket] Joining project:', projectId)
+      socketClient.joinProject(projectId)
     }
-    socketClient.offTaskCreated()
-    socketClient.offTaskUpdated()
-    socketClient.offTaskDeleted()
-  }
-}, [projectId])
+
+    const handleTaskCreated = (task: any) => {
+      console.log('✅ [Socket] Task created:', task)
+      setColumns((prev) => {
+        const newCols = [...prev]
+        const col = newCols.find((c) => c.id === task.status_id)
+        if (col) col.tasks = [task, ...col.tasks]
+        return newCols
+      })
+    }
+
+    const handleTaskUpdated = (updatedTask: any) => {
+      console.log('🔄 [Socket] Task updated:', updatedTask)
+      setColumns((prev) => {
+        const newCols = prev.map((col) => ({
+          ...col,
+          tasks: col.tasks.filter((t) => t.task_id !== updatedTask.task_id)
+        }))
+        const targetCol = newCols.find((c) => c.id === updatedTask.status_id)
+        if (targetCol) targetCol.tasks = [updatedTask, ...targetCol.tasks]
+        return newCols
+      })
+    }
+
+    const handleTaskDeleted = ({ task_id }: { task_id: string }) => {
+      console.log('🗑️ [Socket] Task deleted:', task_id)
+      setColumns((prev) =>
+        prev.map((col) => ({
+          ...col,
+          tasks: col.tasks.filter((t) => t.task_id !== task_id)
+        }))
+      )
+    }
+
+    console.log('👂 [Socket] Registering event listeners...')
+    socketClient.onTaskCreated(handleTaskCreated)
+    socketClient.onTaskUpdated(handleTaskUpdated)
+    socketClient.onTaskDeleted(handleTaskDeleted)
+
+    return () => {
+      console.log('🔌 [Socket] Leaving project:', projectId)
+      if (projectId) {
+        socketClient.leaveProject(projectId)
+      }
+      socketClient.offTaskCreated()
+      socketClient.offTaskUpdated()
+      socketClient.offTaskDeleted()
+    }
+  }, [projectId])
 
   /// Handle change function for input
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -222,6 +240,37 @@ export default function BoardTab() {
     return diff > 0 ? `${diff} ngày còn lại` : diff === 0 ? 'Hôm nay là ngày cuối' : 'Đã kết thúc'
   }
 
+  const handleCompleteSprintClick = () => {
+    if (sprint) {
+      setSprintToComplete(sprint)
+    }
+  }
+
+  const handleCompleteSprintConfirm = async (
+    incompleteTasks: { taskId: string; action: 'backlog' | 'nextSprint'; targetSprintId?: number | null }[]
+  ) => {
+    if (!sprintToComplete) return
+
+    try {
+      if (!permissions.canCompleteSprint) {
+        toast.error('Bạn không có quyền hoàn thành giai đoạn!')
+        return
+      }
+      await completeSprintAPI(sprintToComplete.sprint_id, incompleteTasks)
+      toast.success('Đã hoàn thành giai đoạn thành công!')
+
+      setSprintToComplete(null)
+      // Reload board
+      const res = await getCurrentSprintDetails(projectId)
+      setSprint(res.data)
+      const res_2 = await getBoard(projectId)
+      setColumns(res_2.data)
+    } catch (err) {
+      const error = err as AxiosError<ApiErrorResponse>
+      toast.error(error.response?.data.error.message ?? 'Lỗi khi hoàn thành giai đoạn!')
+    }
+  }
+
   const renderSkeleton = () => {
     const skeletonCols = Array.from({ length: 4 })
     return (
@@ -264,83 +313,34 @@ export default function BoardTab() {
           renderSkeleton()
         ) : (
           <>
-            {/* Header bar */}
-            <div className='flex flex-row justify-between mb-6'>
-              <div className='flex flex-row gap-2'>
-                <div className='relative w-[250px]'>
-                  <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500' size={18} />
-                  <input
-                    type='text'
-                    placeholder='Search board'
-                    value={query}
-                    onChange={handleChange}
-                    className='pl-9 pr-3 py-2 w-full border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm'
-                  />
-                </div>
+            {/* New Sprint Header */}
+            {/* New Sprint Header */}
+            {sprint && (
+              <SprintBoardHeader
+                sprint={sprint}
+                columns={columns}
+                query={query}
+                setQuery={setQuery}
+                filters={filters}
+                onOpenFilter={() => setShowFilterMenu(true)}
+                onCompleteSprint={handleCompleteSprintClick}
+                onShowBurndown={handleLoadBurndown}
+                permissions={permissions}
+                completedStatusIds={completedStatusIds}
+              />
+            )}
 
-                <button
-                  onClick={() => setShowFilterMenu(true)}
-                  className={`flex items-center gap-2 px-4 py-2 border rounded-md text-sm font-medium transition-colors duration-150 cursor-pointer ${
-                    Object.keys(filters).length > 0
-                      ? 'bg-blue-50 border-blue-400 text-blue-700'
-                      : 'border-gray-400 text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <ListFilter size={18} />
-                  Filter
-                  {Object.keys(filters).length > 0 && (
-                    <span className='px-1.5 py-0.5 text-xs bg-blue-600 text-white rounded-full'>
-                      {Object.keys(filters).length}
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              <div className='flex flex-row gap-2'>
-                <Tooltip target='.sprint-btn' />
-                <Tooltip target='.burndown-btn' />
-                <Tooltip target='.add-task-btn' />
-
-                {sprint && (
-                  <>
-                    <button className='flex items-center gap-2 px-4 py-2 border border-gray-400 rounded-md text-sm font-medium text-gray-700 bg-[var(--color-lowest)] text-white transition-colors duration-150 cursor-pointer'>
-                      Hoàn thành sprint
-                    </button>
-                  </>
-                )}
-
-                <div
-                  onClick={() => setShowSprintDetail(true)}
-                  className='sprint-btn flex items-center gap-2 px-2 py-2 border border-gray-400 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors duration-150 cursor-pointer'
-                  data-pr-tooltip='Chi tiết sprint'
-                  data-pr-position='bottom'
-                >
-                  <Repeat size={18} className='text-gray-700' />
-                </div>
-
-                <div
-                  onClick={handleLoadBurndown}
-                  className='burndown-btn flex items-center gap-2 px-2 py-2 border border-gray-400 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors duration-150 cursor-pointer'
-                  data-pr-tooltip='Biểu đồ burndown'
-                  data-pr-position='bottom'
-                >
-                  <ChartColumnIncreasing size={18} className='text-gray-700' />
-                </div>
-              </div>
-            </div>
-
-            {/* 🪄 Nếu KHÔNG có sprint nào đang active */}
             {!sprint ? (
               <div className='w-full flex flex-col items-center justify-center mt-20 text-center text-gray-600'>
                 <Repeat size={48} className='text-gray-500 mb-3' />
                 <p className='text-lg font-medium mb-4'>
-                  Hãy lên kế hoạch và khởi tạo một sprint mới ở tab <strong>Backlog</strong> 💡
+                  Hãy lên kế hoạch và khởi tạo một giai đoạn mới ở tab <strong>Kho công việc</strong> 💡
                 </p>
                 <NavLink
                   to={`backlog`}
                   className='px-5 py-2 bg-[var(--color-lowest)] text-white rounded-lg text-sm font-medium hover:opacity-90 transition'
                 >
-                  Đi đến Backlog
+                  Đi đến Kho công việc
                 </NavLink>
               </div>
             ) : (
@@ -358,29 +358,6 @@ export default function BoardTab() {
                   />
                 </div>
               </>
-            )}
-
-            {/* 🪄 Sprint Detail Modal */}
-            {showSprintDetail && sprint && (
-              <div className='fixed inset-0 bg-black/40 flex items-center justify-center z-50'>
-                <div className='bg-white rounded-xl shadow-lg p-6 w-[400px] relative'>
-                  <button
-                    onClick={() => setShowSprintDetail(false)}
-                    className='absolute top-3 right-3 text-gray-500 hover:text-black'
-                  >
-                    <X size={20} />
-                  </button>
-
-                  <h2 className='text-xl font-semibold text-black mb-3'>{sprint.name}</h2>
-                  <p className='text-gray-600 text-sm mb-2'>
-                    <strong>Bắt đầu:</strong> {new Date(sprint.start_date).toLocaleDateString('vi-VN')}
-                  </p>
-                  <p className='text-gray-600 text-sm mb-2'>
-                    <strong>Kết thúc:</strong> {new Date(sprint.end_date).toLocaleDateString('vi-VN')}
-                  </p>
-                  <p className='text-gray-800 font-medium mt-4'>{calcDaysLeft()}</p>
-                </div>
-              </div>
             )}
 
             {/* Filter Menu */}
@@ -426,6 +403,20 @@ export default function BoardTab() {
                 onUpdate={handleTaskUpdate}
                 members={members}
                 statuses={statuses}
+              />
+            )}
+
+            {/* Complete Sprint Modal */}
+            {sprintToComplete && (
+              <CompleteSprintModal
+                isOpen={true}
+                onClose={() => setSprintToComplete(null)}
+                sprint={sprintToComplete}
+                onConfirm={handleCompleteSprintConfirm}
+                availableSprints={allSprints.filter(
+                  (s) => s.status === 'planned' && s.sprint_id !== sprintToComplete.sprint_id
+                )}
+                completedStatuses={completedStatusIds}
               />
             )}
           </>

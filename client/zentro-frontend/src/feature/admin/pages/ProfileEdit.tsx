@@ -89,7 +89,7 @@ export default function ProfileEdit() {
       setUser(updatedUser)
 
       toast.success('Cập nhật thông tin thành công!')
-      navigate('/member/profile')
+      navigate('/admin/profile')
     } catch (err) {
       const error = err as AxiosError<ApiErrorResponse>
       toast.error(error.response?.data.error.message ?? 'Lỗi khi cập nhật thông tin!')
@@ -120,7 +120,7 @@ export default function ProfileEdit() {
       <div className='flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200'>
         <div className='flex items-center gap-4'>
           <button
-            onClick={() => navigate('/member/profile')}
+            onClick={() => navigate('/admin/profile')}
             className='p-2 hover:bg-gray-100 rounded-lg transition-colors'
             title='Quay lại'
           >
@@ -214,7 +214,7 @@ export default function ProfileEdit() {
             <div className='flex items-center gap-3 pt-6 border-t border-gray-200'>
               <button
                 type='button'
-                onClick={() => navigate('/member/profile')}
+                onClick={() => navigate('/admin/profile')}
                 className='flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium'
                 disabled={isLoading}
               >

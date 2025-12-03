@@ -10,6 +10,7 @@ import PrioritySelect from '../../../../components/PrioritySelect'
 import { priorityColors } from '../../../../types/type'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { toast } from 'sonner'
+import ConfirmModal from '../../../../components/ConfirmModal'
 
 interface SubtaskItemProps {
   subtask: Task
@@ -22,6 +23,7 @@ export default function SubtaskItem({ subtask, projectId, onUpdated, onDeleted }
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState(subtask.title)
   const [showMenu, setShowMenu] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -30,7 +32,11 @@ export default function SubtaskItem({ subtask, projectId, onUpdated, onDeleted }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as Element
+      const isInsideMenu = menuRef.current && menuRef.current.contains(target)
+      const isInsideDropdown = target.closest('.p-dropdown-panel') || target.closest('.p-overlay')
+
+      if (!isInsideMenu && !isInsideDropdown) {
         setShowMenu(false)
       }
     }
@@ -67,19 +73,23 @@ export default function SubtaskItem({ subtask, projectId, onUpdated, onDeleted }
     }
   }
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
     if (permissions.canDelete) {
       toast.error('Bạn không có quyền xóa công việc này!')
       return
     }
-    if (!confirm('Bạn có chắc chắn muốn xóa công việc phụ này?')) return
+    setShowDeleteConfirm(true)
+  }
 
+  const handleConfirmDelete = async () => {
     try {
       await deleteSubtaskAPI(subtask.task_id)
       setShowMenu(false)
       onDeleted?.()
     } catch (error) {
       console.error('Failed to delete subtask:', error)
+    } finally {
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -236,7 +246,7 @@ export default function SubtaskItem({ subtask, projectId, onUpdated, onDeleted }
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                handleDelete()
+                handleDeleteClick()
               }}
               className='w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors'
             >
@@ -245,6 +255,16 @@ export default function SubtaskItem({ subtask, projectId, onUpdated, onDeleted }
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title='Xóa công việc phụ'
+        message='Bạn có chắc chắn muốn xóa công việc phụ này?'
+        confirmText='Xóa'
+        confirmButtonColor='bg-red-600 hover:bg-red-700'
+      />
     </div>
   )
 }

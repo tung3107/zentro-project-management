@@ -79,7 +79,7 @@ export default function Settings() {
     // Apply theme
     const root = window.document.documentElement
     const theme = generalSettings.theme
-
+    
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
       root.classList.remove('light', 'dark')
@@ -88,7 +88,7 @@ export default function Settings() {
       root.classList.remove('light', 'dark')
       root.classList.add(theme)
     }
-
+    
     localStorage.setItem('theme', theme)
   }, [generalSettings.theme])
 
@@ -102,7 +102,7 @@ export default function Settings() {
       if (storedUser) {
         const user = JSON.parse(storedUser)
         setCurrentUser(user)
-        setGeneralSettings((prev) => ({ ...prev, timezone: user.timezone || 'Asia/Ho_Chi_Minh' }))
+        setGeneralSettings(prev => ({ ...prev, timezone: user.timezone || 'Asia/Ho_Chi_Minh' }))
       }
     } catch (error) {
       console.error('Error fetching initial data', error)
@@ -148,7 +148,7 @@ export default function Settings() {
     try {
       // Save timezone
       await api.put('/users/timezone', { timezone: generalSettings.timezone })
-
+      
       // Update local storage user
       if (currentUser) {
         const updatedUser = { ...currentUser, timezone: generalSettings.timezone }
@@ -169,7 +169,7 @@ export default function Settings() {
       toast.error('Mật khẩu xác nhận không khớp!')
       return
     }
-
+    
     setIsSaving(true)
     try {
       await api.post('/auth/change-password', {
@@ -217,7 +217,7 @@ export default function Settings() {
         {/* Sidebar Tabs */}
         <div className='w-64 bg-white border-r border-gray-200 p-4'>
           <nav className='space-y-2'>
-            {/* <button
+            <button
               onClick={() => setActiveTab('notifications')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === 'notifications'
@@ -227,9 +227,9 @@ export default function Settings() {
             >
               <Bell size={18} />
               <span>Thông báo</span>
-            </button> */}
+            </button>
 
-            {/* <button
+            <button
               onClick={() => setActiveTab('general')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === 'general'
@@ -239,7 +239,7 @@ export default function Settings() {
             >
               <Eye size={18} />
               <span>Cài đặt chung</span>
-            </button> */}
+            </button>
 
             <button
               onClick={() => setActiveTab('security')}
@@ -259,7 +259,7 @@ export default function Settings() {
         <div className='flex-1 overflow-auto p-6'>
           <div className='max-w-3xl'>
             {/* Notifications Tab */}
-            {activeTab === 'notificationssss' && (
+            {activeTab === 'notifications' && (
               <div className='bg-white rounded-xl border border-gray-200 p-6 space-y-6'>
                 <div>
                   <h2 className='text-lg font-bold text-gray-900 mb-2'>Cài đặt thông báo</h2>
@@ -532,7 +532,7 @@ export default function Settings() {
                         <input
                           type='password'
                           value={passwordForm.currentPassword}
-                          onChange={(e) => setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
+                          onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
                           className='w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
                           placeholder='Nhập mật khẩu hiện tại'
                         />
@@ -545,7 +545,7 @@ export default function Settings() {
                         <input
                           type='password'
                           value={passwordForm.newPassword}
-                          onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                          onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
                           className='w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
                           placeholder='Nhập mật khẩu mới'
                         />
@@ -558,7 +558,7 @@ export default function Settings() {
                         <input
                           type='password'
                           value={passwordForm.confirmPassword}
-                          onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                          onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
                           className='w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
                           placeholder='Nhập lại mật khẩu mới'
                         />
@@ -586,14 +586,10 @@ export default function Settings() {
 
                   <div className='space-y-4'>
                     {devices.map((device) => (
-                      <div
-                        key={device.id}
-                        className='flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200'
-                      >
+                      <div key={device.id} className='flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200'>
                         <div className='flex items-center gap-4'>
                           <div className='p-2 bg-white rounded-lg border border-gray-200'>
-                            {device.device_name.toLowerCase().includes('mobile') ||
-                            device.device_name.toLowerCase().includes('phone') ? (
+                            {device.device_name.toLowerCase().includes('mobile') || device.device_name.toLowerCase().includes('phone') ? (
                               <Smartphone size={24} className='text-gray-600' />
                             ) : (
                               <Laptop size={24} className='text-gray-600' />
@@ -621,11 +617,22 @@ export default function Settings() {
                             </div>
                           </div>
                         </div>
+                        {!device.is_current && (
+                          <button
+                            onClick={() => handleRevokeDevice(device.id)}
+                            className='p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors'
+                            title='Đăng xuất thiết bị này'
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </div>
                     ))}
 
                     {devices.length === 0 && (
-                      <div className='text-center py-8 text-gray-500'>Không có thông tin thiết bị</div>
+                      <div className='text-center py-8 text-gray-500'>
+                        Không có thông tin thiết bị
+                      </div>
                     )}
                   </div>
                 </div>

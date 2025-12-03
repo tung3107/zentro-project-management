@@ -2,6 +2,9 @@ const { Op, where, literal, fn, col } = require("sequelize");
 const Project = require("../models/Project");
 const StatusTemplate = require("../models/StatusTemplate");
 const ProjectStatus = require("../models/ProjectStatus");
+const RoleTemplate = require("../models/RoleTemplate");
+const ProjectRolePermission = require("../models/ProjectRolePermission");
+const ChatService = require("./chat.service");
 
 const ApiError = require("../utils/ApiError");
 const User = require("../models/User");
@@ -10,6 +13,19 @@ const Member = require("../models/Member");
 const { uploadImg } = require("../utils/uploadImg");
 const Role = require("../models/Role");
 const { sequelize } = require("../config/database");
+const Report = require("../models/Report");
+const Task = require("../models/Task");
+const Sprint = require("../models/Sprint");
+const TestRun = require("../models/TestRun");
+const TestRunTestCase = require("../models/TestRunTestCase");
+const TestRunHistory = require("../models/TestRunHistory");
+const TestRunStep = require("../models/TestRunStep");
+const TestCase = require("../models/TestCase");
+const TestCaseVersion = require("../models/TestCaseVersion");
+const TestCaseAttachment = require("../models/TestCaseAttachment");
+const TestCaseTaskRelation = require("../models/TestCaseTaskRelation");
+const TestSuite = require("../models/TestSuite");
+const WorkFlow = require("../models/WorkFlow");
 
 class ProjectService {
   async getProjectListByUser(user_id) {
@@ -44,7 +60,118 @@ class ProjectService {
       if (!data) throw new ApiError("Không tìm thấy ID", 400);
 
       await sequelize.transaction(async (t) => {
+        // Xóa theo thứ tự: child tables trước, parent tables sau
+
+        // 1. Xóa Task (có FK đến project_status)
+        await Task.destroy({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+
+        // 2. Xóa Sprint
+        await Sprint.destroy({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+
+        // 3. Xóa Members
         await Member.destroy({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+
+        const testRuns = await TestRun.findAll({
+          where: { project_id: project_id },
+          attributes: ["test_run_id"],
+          transaction: t,
+        });
+        const testRunIds = testRuns.map((tr) => tr.test_run_id);
+
+        if (testRunIds.length > 0) {
+          // Lấy tất cả test_run_testcase_id
+          const testRunTestCases = await TestRunTestCase.findAll({
+            where: { test_run_id: testRunIds },
+            attributes: ["test_run_testcase_id"],
+            transaction: t,
+          });
+          const testRunTestCaseIds = testRunTestCases.map(
+            (trtc) => trtc.test_run_testcase_id
+          );
+
+          if (testRunTestCaseIds.length > 0) {
+            await TestRunHistory.destroy({
+              where: { test_run_testcase_id: testRunTestCaseIds },
+              transaction: t,
+            });
+
+            await TestRunStep.destroy({
+              where: { test_run_testcase_id: testRunTestCaseIds },
+              transaction: t,
+            });
+          }
+
+          await TestRunTestCase.destroy({
+            where: { test_run_id: testRunIds },
+            transaction: t,
+          });
+        }
+
+        await TestRun.destroy({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+
+        // Lấy tất cả testcase_id của project
+        const testCases = await TestCase.findAll({
+          where: { project_id: project_id },
+          attributes: ["testcase_id"],
+          transaction: t,
+        });
+        const testCaseIds = testCases.map((tc) => tc.testcase_id);
+
+        if (testCaseIds.length > 0) {
+          // Xóa TestCaseVersion
+          await TestCaseVersion.destroy({
+            where: { testcase_id: testCaseIds },
+            transaction: t,
+          });
+
+          await TestCaseAttachment.destroy({
+            where: { testcase_id: testCaseIds },
+            transaction: t,
+          });
+
+          await TestCaseTaskRelation.destroy({
+            where: { testcase_id: testCaseIds },
+            transaction: t,
+          });
+        }
+
+        await TestCase.destroy({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+        await TestSuite.destroy({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+
+        await ProjectStatus.destroy({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+
+        await ProjectRolePermission.destroy({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+
+        await WorkFlow.destroy({
+          where: { project_id: project_id },
+          transaction: t,
+        });
+
+        await Report.destroy({
           where: { project_id: project_id },
           transaction: t,
         });
@@ -127,8 +254,15 @@ class ProjectService {
 
       const data = await Project.create(projectData);
 
+      // Copy status templates
       const status_template = await StatusTemplate.findAll({
-        attributes: ["name", "color", "is_default"],
+        attributes: [
+          "name",
+          "color",
+          "is_default",
+          "background",
+          "border_color",
+        ],
         raw: true,
       });
 
@@ -137,6 +271,18 @@ class ProjectService {
       });
 
       await ProjectStatus.bulkCreate(status_template);
+
+      // Copy role permission templates
+      const role_template = await RoleTemplate.findAll({
+        attributes: ["role_id", "permission_id", "forbidden"],
+        raw: true,
+      });
+
+      role_template.forEach((element) => {
+        element.project_id = data.project_id;
+      });
+
+      await ProjectRolePermission.bulkCreate(role_template);
 
       return data;
     } catch (err) {
@@ -340,11 +486,23 @@ class ProjectService {
         value: priorityPercent[index],
       }));
 
+      // Get all members status for this project (to check for deleted members)
+      const members = await Member.findAll({
+        where: { project_id },
+        attributes: ["user_id", "is_delete"],
+      });
+
+      const memberStatusMap = new Map();
+      members.forEach((m) => {
+        memberStatusMap.set(m.user_id, m.is_delete);
+      });
+
       // Calculate workload by assignee
       const assigneeWorkload = {};
       tasks.forEach((task) => {
         const key = task.assignee_id || "unassigned";
         if (!assigneeWorkload[key]) {
+          const isDeleted = memberStatusMap.get(task.assignee_id) === true;
           assigneeWorkload[key] = {
             user_id: task.assignee_id,
             name: task.assignee
@@ -352,6 +510,7 @@ class ProjectService {
               : "Chưa được giao",
             avatar: task.assignee?.avatar || null,
             count: 0,
+            is_deleted: isDeleted,
           };
         }
         assigneeWorkload[key].count++;
@@ -360,6 +519,7 @@ class ProjectService {
         user_id: assignee.user_id,
         name: assignee.name,
         avatar: assignee.avatar,
+        is_deleted: assignee.is_deleted,
         percent:
           totalTasks > 0 ? Math.round((assignee.count / totalTasks) * 100) : 0,
       }));

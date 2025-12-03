@@ -52,12 +52,10 @@ class ActivityLogService {
         limit: limitNum,
       });
 
-      // Resolve IDs to names for display
       const enrichedActivities = await Promise.all(
         rows.map(async (log) => {
           const logData = log.toJSON();
 
-          // Parse old_value and new_value if they are strings
           let oldValue = logData.old_value;
           let newValue = logData.new_value;
 
@@ -80,7 +78,6 @@ class ActivityLogService {
           oldValue = oldValue || {};
           newValue = newValue || {};
 
-          // Resolve task details
           if (logData.entity_type === "task" && logData.entity_id) {
             const task = await Task.findByPk(logData.entity_id, {
               attributes: ["task_id", "title", "type"],
@@ -94,7 +91,6 @@ class ActivityLogService {
             }
           }
 
-          // Resolve sprint details
           if (logData.entity_type === "sprint" && logData.entity_id) {
             const sprint = await Sprint.findByPk(logData.entity_id, {
               attributes: [
@@ -171,12 +167,10 @@ class ActivityLogService {
         throw new ApiError("Task not found", 400);
       }
 
-      // Resolve IDs to names for display
       const enrichedLogs = await Promise.all(
         logs.map(async (log) => {
           const logData = log.toJSON();
 
-          // Parse old_value and new_value if they are strings
           let oldValue = logData.old_value;
           let newValue = logData.new_value;
 

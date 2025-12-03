@@ -6,6 +6,7 @@ import { createTaskLinkAPI, deleteTaskLinkAPI, searchTasksForMentionAPI } from '
 import { toast } from 'sonner'
 import { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '../../../auth/hooks/useAuth'
+import ConfirmModal from '../../../../components/ConfirmModal'
 
 interface LinkedTasksSectionProps {
   taskId: number
@@ -30,6 +31,8 @@ export default function LinkedTasksSection({
   const [searchResults, setSearchResults] = useState<Task[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [linkToDelete, setLinkToDelete] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -86,18 +89,25 @@ export default function LinkedTasksSection({
     }
   }
 
-  const handleDeleteLink = async (linkedTaskId: string) => {
-    if (!confirm('Bạn có chắc muốn xóa liên kết này?')) return
+  const handleDeleteLinkClick = (linkedTaskId: string) => {
+    setLinkToDelete(linkedTaskId)
+    setShowDeleteConfirm(true)
+  }
 
-    setIsDeleting(linkedTaskId)
+  const handleConfirmDeleteLink = async () => {
+    if (!linkToDelete) return
+
+    setIsDeleting(linkToDelete)
     try {
-      await deleteTaskLinkAPI(taskId, Number(linkedTaskId))
+      await deleteTaskLinkAPI(taskId, Number(linkToDelete))
       onLinkedTasksUpdated()
     } catch (err) {
       console.error('Failed to delete link:', err)
       alert('Không thể xóa liên kết. Vui lòng thử lại.')
     } finally {
       setIsDeleting(null)
+      setLinkToDelete(null)
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -183,7 +193,7 @@ export default function LinkedTasksSection({
 
                     {/* Delete Button */}
                     <button
-                      onClick={() => handleDeleteLink(link.linked_task_id)}
+                      onClick={() => handleDeleteLinkClick(link.linked_task_id)}
                       disabled={isDeleting === link.linked_task_id}
                       className='opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-all disabled:opacity-50'
                       title='Xóa liên kết'
@@ -281,6 +291,16 @@ export default function LinkedTasksSection({
           )}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDeleteLink}
+        title='Xóa liên kết task'
+        message='Bạn có chắc muốn xóa liên kết này?'
+        confirmText='Xóa'
+        confirmButtonColor='bg-red-600 hover:bg-red-700'
+      />
     </div>
   )
 }

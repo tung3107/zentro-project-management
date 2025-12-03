@@ -28,14 +28,27 @@ export default function TaskCard({ task, projectId, isSelected, onClick }: TaskC
           <div className='flex items-center gap-4 text-sm text-gray-600'>
             {task.assignee && (
               <div className='flex items-center gap-1.5'>
-                <Avatar
-                  name={`${task.assignee.first_name || ''} ${task.assignee.last_name || ''}`}
-                  size={20}
-                  avatarUrl={task.assignee.avatar}
-                />
-                <span>
-                  {task.assignee.first_name} {task.assignee.last_name}
-                </span>
+                <div className='relative'>
+                  <Avatar
+                    name={`${task.assignee.first_name || ''} ${task.assignee.last_name || ''}`}
+                    size={20}
+                    avatarUrl={task.assignee.avatar}
+                  />
+                  {task.assignee.memberships?.[0]?.is_delete && (
+                    <span
+                      className='absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-red-500 ring-1 ring-white'
+                      title='Đã rời dự án'
+                    />
+                  )}
+                </div>
+                <div className='flex flex-col'>
+                  <span className='leading-none'>
+                    {task.assignee.first_name} {task.assignee.last_name}
+                  </span>
+                  {task.assignee.memberships?.[0]?.is_delete && (
+                    <span className='text-[10px] text-red-500 font-normal leading-none'>Đã rời dự án</span>
+                  )}
+                </div>
               </div>
             )}
             {task.due_date && <span>{format(new Date(task.due_date), 'dd/MM/yyyy')}</span>}

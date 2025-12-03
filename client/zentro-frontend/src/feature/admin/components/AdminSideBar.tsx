@@ -140,7 +140,7 @@ const UserMenu = ({ menuRef, logout }: { menuRef: React.RefObject<HTMLDivElement
         <li className='w-full'>
           <NavLink
             className='px-4 py-2.5 hover:bg-gray-50 cursor-pointer block text-sm font-medium text-gray-700 transition-colors'
-            // to={`/member/profile/${user?.user_id}`}
+            to={`/admin/profile`}
           >
             <div className='flex items-center gap-3'>
               <User size={18} className='text-gray-500' />
@@ -151,7 +151,7 @@ const UserMenu = ({ menuRef, logout }: { menuRef: React.RefObject<HTMLDivElement
         <li className='w-full'>
           <NavLink
             className='px-4 py-2.5 hover:bg-gray-50 cursor-pointer block text-sm font-medium text-gray-700 transition-colors'
-            to='/member/settings'
+            to='/admin/settings'
           >
             <div className='flex items-center gap-3'>
               <SettingsIcon size={18} className='text-gray-500' />

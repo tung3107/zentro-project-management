@@ -22,6 +22,9 @@ export interface Task {
     avatar?: string
     first_name?: string
     last_name?: string
+    memberships?: Array<{
+      is_delete: boolean
+    }>
   }
   subtasks?: Task[]
   status?: {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Dropdown as PrimeDropdown, DropdownChangeEvent } from 'primereact/dropdown'
+import { Dropdown as PrimeDropdown, type DropdownChangeEvent } from 'primereact/dropdown'
 import api from '../util/axiosClient'
 import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '../feature/auth/hooks/useAuth'
@@ -23,6 +23,7 @@ interface ApiDropdownProps {
   valueKey?: string
   labelKey?: string
   avatarSize?: number
+  appendTo?: 'self' | HTMLElement | null | undefined
 }
 
 const Dropdown: React.FC<ApiDropdownProps> = ({
@@ -37,7 +38,8 @@ const Dropdown: React.FC<ApiDropdownProps> = ({
   disabled = false,
   valueKey = 'id', // <--- default vẫn là id
   labelKey = 'name', // <--- default vẫn là name
-  avatarSize = 30
+  avatarSize = 30,
+  appendTo
 }) => {
   const [options, setOptions] = useState<RoleOption[]>([])
   const [loading, setLoading] = useState(false)
@@ -119,6 +121,7 @@ const Dropdown: React.FC<ApiDropdownProps> = ({
       loading={loading}
       showClear={showClear}
       emptyMessage='Không có dữ liệu'
+      appendTo={appendTo}
     />
   )
 }

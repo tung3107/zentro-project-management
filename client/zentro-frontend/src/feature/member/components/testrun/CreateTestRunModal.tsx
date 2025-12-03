@@ -128,8 +128,8 @@ export default function CreateTestRunModal({ isOpen, onClose, onSuccess, project
           {/* Selection Side */}
           <div className='flex-1 flex flex-col h-full overflow-hidden bg-gray-50'>
             <div className='px-6 py-4 border-b border-gray-200 bg-white'>
-              <h3 className='font-semibold text-gray-900'>Chọn Test Cases</h3>
-              <p className='text-xs text-gray-500 mt-1'>Chọn các test case hoặc bộ test case để đưa vào run này</p>
+              <h3 className='font-semibold text-gray-900'>Chọn Test Case</h3>
+              <p className='text-xs text-gray-500 mt-1'>Chọn các test case hoặc bộ test case để đưa vào đợt kiểm thử này</p>
             </div>
             <div className='flex-1 overflow-y-auto p-4'>
               {isLoading ? (

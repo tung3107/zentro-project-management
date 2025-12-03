@@ -1,0 +1,161 @@
+{
+  "data": {
+    "tasks": [
+      {
+        "task_id": "936058",
+        "title": "kkkaksdasd",
+        "description": "<p>aasdasd</p>",
+        "type": "story",
+        "priority": 0,
+        "status": "Cần làm",
+        "status_type": "todo",
+        "assignee": "Tung Duong Van",
+        "assignee_id": "2025033626",
+        "reporter": "Tung Duong Van",
+        "estimate": 1,
+        "spent_time": null,
+        "start_date": "2025-11-26T14:59:24.000Z",
+        "due_date": "2025-11-27T17:00:00.000Z",
+        "created_at": "2025-11-26T15:03:27.000Z",
+        "updated_at": "2025-11-27T18:27:17.000Z",
+        "sprint": "Backlog",
+        "project_name": "Project Zentro",
+        "is_overdue": true,
+        "days_until_due": -2
+      },
+      {
+        "task_id": "380101",
+        "title": "aksk",
+        "description": null,
+        "type": "subtask",
+        "priority": 0,
+        "status": "Hoàn thành",
+        "status_type": "todo",
+        "assignee": "Unassigned",
+        "assignee_id": null,
+        "reporter": "Unknown",
+        "estimate": null,
+        "spent_time": null,
+        "start_date": null,
+        "due_date": null,
+        "created_at": "2025-11-02T13:22:42.000Z",
+        "updated_at": "2025-11-27T03:20:57.000Z",
+        "sprint": "Backlog",
+        "project_name": "Project Zentro",
+        "is_overdue": null,
+        "days_until_due": null
+      },
+      {
+        "task_id": "318759",
+        "title": "Làm BE",
+        "description": null,
+        "type": "subtask",
+        "priority": 0,
+        "status": "Hoàn thành",
+        "status_type": "todo",
+        "assignee": "Unassigned",
+        "assignee_id": null,
+        "reporter": "Unknown",
+        "estimate": null,
+        "spent_time": null,
+        "start_date": null,
+        "due_date": null,
+        "created_at": "2025-11-02T10:31:07.000Z",
+        "updated_at": "2025-11-27T03:21:23.000Z",
+        "sprint": "Sprint 2",
+        "sprint_status": "completed",
+        "project_name": "Project Zentro",
+        "is_overdue": null,
+        "days_until_due": null
+      }
+    ],
+    "comments": [],
+    "members": [
+      {
+        "user_id": "2025349821",
+        "name": "Tùng Dương",
+        "email": "duongtung2106@gmail.com",
+        "avatar": null
+      },
+      {
+        "user_id": "2025364436",
+        "name": "Tung Duong Van",
+        "email": "postungly@gmail.com",
+        "avatar": null
+      },
+      {
+        "user_id": "2025692047",
+        "name": "Nguyễn Văn B",
+        "email": "leader@example.com",
+        "avatar": "https://res.cloudinary.com/deounhiee/image/upload/v1757225865/rpjumzwfzqtmjb1r5ne5.jpg"
+      }
+    ],
+    "sprints": [
+      {
+        "sprint_id": 12,
+        "name": "Sprint 2",
+        "goal": null,
+        "status": "completed",
+        "start_date": "2025-11-24T17:00:00.000Z",
+        "end_date": "2025-11-30T17:00:00.000Z",
+        "velocity_estimate": null
+      },
+      {
+        "sprint_id": 22,
+        "name": "Sprint 1",
+        "goal": null,
+        "status": "active",
+        "start_date": "2025-11-24T17:00:00.000Z",
+        "end_date": "2025-11-30T17:00:00.000Z",
+        "velocity_estimate": null
+      }
+    ],
+    "stats": {
+      "total_tasks": 3,
+      "completed_tasks": 0,
+      "in_progress_tasks": 0,
+      "pending_tasks": 3,
+      "overdue_tasks": 1,
+      "tasks_by_priority": {
+        "0": 3,
+        "1": 0,
+        "2": 0,
+        "3": 0
+      },
+      "tasks_by_type": {
+        "story": 1,
+        "subtask": 2
+      },
+      "total_estimate": 1,
+      "total_spent_time": 0,
+      "completion_percentage": 0,
+      "sprint_stats": {
+        "total": 2,
+        "active": 1,
+        "completed": 1,
+        "planned": 0
+      },
+      "member_performance": {
+        "2025033626": {
+          "name": "Tung Duong Van",
+          "total_tasks": 1,
+          "completed_tasks": 0,
+          "in_progress_tasks": 0,
+          "overdue_tasks": 1,
+          "total_spent_time": 0
+        }
+      },
+      "upcoming_deadlines": [],
+      "overdue_list": [
+        {
+          "task_id": "936058",
+          "title": "kkkaksdasd",
+          "due_date": "2025-11-27T17:00:00.000Z",
+          "assignee": "Tung Duong Van",
+          "days_overdue": 3
+        }
+      ]
+    }
+  },
+  "aiAnalysis": "## BÁO CÁO TIẾN ĐỘ DỰ ÁN\n\n**Ngày:** [Ngày hiện tại]\n\n**Loại báo cáo:** Tiến độ dự án\n\n### 1. Tóm tắt tổng quan tiến độ\n\n*   **Tiến độ hiện tại:** **0/3** task đã hoàn thành (**0%**). Dự án đang chậm tiến độ.\n\n### 2. Phân tích chi tiết\n\n*   **Tỷ lệ hoàn thành và xu hướng:**\n    *   Tỷ lệ hoàn thành là **0%**.\n    *   Xu hướng: Do chưa có task nào hoàn thành, xu hướng hiện tại là **âm**.\n*   **Đánh giá về task quá hạn:**\n    *   Có **1 task** đang bị quá hạn. Đây là một dấu hiệu đáng lo ngại, cần xem xét nguyên nhân và có biện pháp khắc phục ngay lập tức.\n*   **Phân tích về thời gian:**\n    *   Tổng thời gian ước lượng: **1 giờ**.\n    *   Tổng thời gian đã dùng: **0 giờ**.\n    *   Do chưa có task nào được thực hiện, thời gian thực tế chưa được sử dụng. Cần theo dõi sát sao khi các task bắt đầu được triển khai để đảm bảo ước lượng thời gian chính xác.\n\n### 3. Highlight các vấn đề quan trọng\n\n*   **Task ưu tiên cao chưa hoàn thành:** Cần xác định xem task nào đang bị quá hạn và có độ ưu tiên cao để tập trung xử lý.\n*   **Deadline sắp tới:** Cần rà soát lại các deadline sắp tới và đánh giá khả năng hoàn thành để có hành động phòng ngừa.\n*   **Rủi ro tiềm ẩn:**\n    *   **Thiếu nguồn lực:** Có thể dự án chưa được phân bổ đủ nguồn lực để bắt đầu các task.\n    *   **Ước lượng thời gian không chính xác:** Có thể ước lượng thời gian ban đầu quá lạc quan.\n    *   **Chậm trễ trong khâu chuẩn bị:** Có thể có sự chậm trễ trong việc chuẩn bị các yếu tố cần thiết cho việc thực hiện task.\n\n### 4. Đề xuất hành động cụ thể\n\n*   **Xác định nguyên nhân task quá hạn:** Tìm hiểu lý do task bị quá hạn để có biện pháp khắc phục triệt để.\n*   **Ưu tiên task quá hạn và task có deadline gần:** Tập trung nguồn lực vào việc hoàn thành các task này trước.\n*   **Rà soát và điều chỉnh kế hoạch dự án:** Đánh giá lại kế hoạch dự án dựa trên tiến độ thực tế và điều chỉnh nếu cần thiết. Có thể cần phải điều chỉnh scope, deadline hoặc phân bổ lại nguồn lực.\n*   **Theo dõi sát sao tiến độ hàng ngày:** Tổ chức các buổi họp ngắn hàng ngày để theo dõi tiến độ và giải quyết các vấn đề phát sinh kịp thời.\n*   **Đánh giá lại ước lượng thời gian:** Sau khi thực hiện một vài task, đánh giá lại độ chính xác của ước lượng thời gian và điều chỉnh nếu cần thiết.\n*   **Giao tiếp thường xuyên với các bên liên quan:** Giữ liên lạc chặt chẽ với các thành viên trong nhóm và các bên liên quan khác để đảm bảo mọi người đều nắm được tiến độ dự án và các vấn đề phát sinh.\n*   **Phân tích nguyên nhân gốc rễ:** Thực hiện phân tích nguyên nhân gốc rễ cho các task bị chậm trễ để ngăn chặn tình trạng tương tự xảy ra trong tương lai.\n\nBáo cáo này cung cấp một cái nhìn tổng quan về tình hình dự án hiện tại và các hành động cần thiết để cải thiện tiến độ. Cần thực hiện các hành động được đề xuất một cách nhanh chóng để đưa dự án trở lại đúng hướng.\n"
+}

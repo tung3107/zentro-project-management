@@ -146,8 +146,8 @@ export default function TaskActivityLog({ projectId, taskId }: TaskActivityLogPr
         oldDisplay = oldVal.reporter?.name || 'N/A'
         newDisplay = newVal.reporter?.name || 'N/A'
       } else if (field === 'sprint_id') {
-        oldDisplay = oldVal.sprint?.name || 'Backlog'
-        newDisplay = newVal.sprint?.name || 'Backlog'
+        oldDisplay = oldVal.sprint?.name || 'Kho công việc'
+        newDisplay = newVal.sprint?.name || 'Kho công việc'
       } else if (field === 'priority') {
         oldDisplay = getPriorityLabel(oldVal[field])
         newDisplay = getPriorityLabel(newVal[field])

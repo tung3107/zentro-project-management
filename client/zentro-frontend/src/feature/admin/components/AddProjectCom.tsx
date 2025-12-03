@@ -53,7 +53,7 @@ export default function AddProjectCom({
       newErrors.description = 'Mô tả không được quá 255 ký tự'
 
     if (currentStep === 3 && members.length === 0) {
-      newErrors.members = 'Phải thêm ít nhất 1 thành viên là Leader'
+      newErrors.members = 'Phải thêm ít nhất 1 thành viên là Trưởng nhóm'
     }
 
     if (currentStep === 2) {
@@ -158,8 +158,8 @@ export default function AddProjectCom({
       {/* Header */}
       <div>
         <p className='text-sm text-gray-500 mt-1'>
-          Step {currentStep} of 3:{' '}
-          {currentStep === 1 ? 'Project Details' : currentStep === 2 ? 'Team Setup' : 'Timeline & Budget'}
+          Bước {currentStep} trên 3:{' '}
+          {currentStep === 1 ? 'Chi tiết dự án' : currentStep === 2 ? 'Thiết lập nhóm' : 'Thời gian & Ngân sách'}
         </p>
       </div>
 

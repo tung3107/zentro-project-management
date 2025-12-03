@@ -7,6 +7,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import type { Task } from '../types/task'
 import { type } from '../types/type'
 import { toast } from 'sonner'
+import ConfirmModal from './ConfirmModal'
 
 interface Props {
   provided: DraggableProvided
@@ -31,6 +32,7 @@ const TaskMenu = ({
   onDelete?: (taskId: string) => void
   canDelete?: boolean
 }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const handleCopyLink = (e: React.MouseEvent) => {
     e.stopPropagation()
     const url = `${window.location.origin}/member/projects/${task.project_id}/board?task=${task.task_id}`
@@ -38,11 +40,14 @@ const TaskMenu = ({
     toast.success('Đã copy link công việc!')
   }
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (window.confirm('Bạn có chắc chắn muốn xóa công việc này?')) {
-      onDelete?.(String(task.task_id))
-    }
+    setShowDeleteConfirm(true)
+  }
+
+  const handleConfirmDelete = () => {
+    onDelete?.(String(task.task_id))
+    setShowDeleteConfirm(false)
   }
 
   const handleStatusChange = (e: React.MouseEvent, statusId: number) => {
@@ -114,7 +119,7 @@ const TaskMenu = ({
           {canDelete && (
             <DropdownMenu.Item
               className='px-3 py-2 text-red-600 hover:bg-red-50 cursor-pointer flex items-center gap-2 outline-none'
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
             >
               <Trash2 size={14} />
               <span>Xóa công việc</span>
@@ -122,6 +127,14 @@ const TaskMenu = ({
           )}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
+    <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title='Xóa công việc'
+        message='Bạn có chắc chắn muốn xóa công việc này? Hành động này không thể hoàn tác.'
+        confirmText='Xóa'
+        confirmButtonColor='bg-red-600 hover:bg-red-700' />
     </DropdownMenu.Root>
   )
 }

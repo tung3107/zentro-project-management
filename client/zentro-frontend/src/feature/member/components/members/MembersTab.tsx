@@ -161,15 +161,15 @@ export default function MembersTab() {
       )
 
       // Check if there's exactly one leader
-      const leaderCount = updatedMembers.filter((m) => m.role.role_name.toLowerCase() === 'leader').length
+      const leaderCount = updatedMembers.filter((m) => m.role.role_name.toLowerCase() === 'trưởng nhóm').length
 
       if (leaderCount > 1) {
-        toast.error('Trong một dự án chỉ được có duy nhất 1 Leader')
+        toast.error('Trong một dự án chỉ được có duy nhất 1 Trưởng nhóm')
         return
       }
 
       if (leaderCount < 1) {
-        toast.error('Trong một dự án phải có 1 Leader')
+        toast.error('Trong một dự án phải có 1 Trưởng nhóm')
         return
       }
 

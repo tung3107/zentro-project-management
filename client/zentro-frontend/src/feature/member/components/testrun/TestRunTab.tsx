@@ -20,6 +20,7 @@ import CreateTestRunModal from './CreateTestRunModal'
 import EditTestRunModal from './EditTestRunModal'
 import TestRunDetail from './TestRunDetail'
 import { Skeleton } from 'primereact/skeleton'
+import ConfirmModal from '../../../../components/ConfirmModal'
 
 export default function TestRunTab() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -29,6 +30,8 @@ export default function TestRunTab() {
   const [selectedRunId, setSelectedRunId] = useState<number | null>(null)
   const [openMenuId, setOpenMenuId] = useState<number | null>(null)
   const [editingRun, setEditingRun] = useState<TestRun | null>(null)
+  const [runToDelete, setRunToDelete] = useState<TestRun | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const fetchTestRuns = async () => {
     if (!projectId) return
@@ -58,14 +61,20 @@ export default function TestRunTab() {
     }
   }
 
-  const handleDelete = async (run: TestRun) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa "${run.name}"?`)) return
+  const handleDeleteClick = (run: TestRun) => {
+    setRunToDelete(run)
+    setShowDeleteConfirm(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!runToDelete) return
 
     try {
-      const res = await deleteTestRunAPI(run.test_run_id)
+      const res = await deleteTestRunAPI(runToDelete.test_run_id)
       if (res.success) {
         await fetchTestRuns()
         alert('Đã xóa đợt kiểm thử thành công!')
+        setRunToDelete(null)
       }
     } catch (error) {
       console.error('Failed to delete test run:', error)
@@ -294,7 +303,7 @@ export default function TestRunTab() {
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   setOpenMenuId(null)
-                                  handleDelete(run)
+                                  handleDeleteClick(run)
                                 }}
                                 className='w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer'
                               >
@@ -337,6 +346,17 @@ export default function TestRunTab() {
           testRun={editingRun}
         />
       )}
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title='Xóa đợt kiểm thử'
+        message={`Bạn có chắc chắn muốn xóa "${runToDelete?.name}"?`}
+        confirmText='Xóa'
+        confirmButtonColor='bg-red-600 hover:bg-red-700'
+      />
     </div>
   )
 }

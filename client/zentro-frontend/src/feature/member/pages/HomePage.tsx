@@ -206,7 +206,7 @@ export default function HomePage() {
             </div>
           ) : projects.length === 0 ? (
             <div className='flex flex-col items-center justify-center py-8'>
-              <img src='/Not Found.png' alt='No Projects' className='w-32 h-32 object-contain opacity-70 mb-4' />
+              <img src='/Not Found.png' alt='Không có dự án' className='w-32 h-32 object-contain opacity-70 mb-4' />
               <p className='text-gray-500 text-sm text-center'>
                 Bạn chưa được thêm vào dự án nào. <br />
                 <span className='text-gray-400'>Liên hệ Admin để được thêm vào dự án.</span>

@@ -194,9 +194,9 @@ export default function CompleteSprintModal({
                           className='mt-0.5'
                         />
                         <div>
-                          <p className='text-sm font-medium text-gray-900'>Di chuyển về Backlog</p>
+                          <p className='text-sm font-medium text-gray-900'>Di chuyển về Kho công việc</p>
                           <p className='text-xs text-gray-600 mt-0.5'>
-                            Tất cả task chưa hoàn thành sẽ được chuyển về backlog
+                            Tất cả task chưa hoàn thành sẽ được chuyển về kho công việc
                           </p>
                         </div>
                       </label>

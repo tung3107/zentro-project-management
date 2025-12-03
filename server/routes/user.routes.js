@@ -10,6 +10,7 @@ const {
   resetUserPassword,
   searchUserForProject,
   getOneUser,
+  updateTimezone,
 } = require("../controllers/user.controller");
 const upload = require("../middlewares/upload");
 
@@ -17,6 +18,7 @@ const routes = express.Router();
 
 routes.route("/search").get(protectRoute, searchUserForProject);
 routes.route("/update-profile").put(protectRoute, updateUserProfile);
+routes.route("/timezone").put(protectRoute, updateTimezone);
 
 routes
   .route("/")

@@ -87,12 +87,12 @@ export default function EditSprintCom({
         await updateSprintAPI(formData)
 
         onSuccess?.()
-        toast.success('Sửa sprint thành công!')
+        toast.success('Sửa giai đoạn thành công!')
         setAddModalOpen(false)
         setAddModalContent(null)
       } catch (err) {
         const error = err as AxiosError<ApiErrorResponse>
-        toast.error(error.response?.data.error.message ?? 'Lỗi khi tạo sprint!')
+        toast.error(error.response?.data.error.message ?? 'Lỗi khi sửa giai đoạn!')
       } finally {
         setIsLoading(false)
       }
@@ -113,11 +113,11 @@ export default function EditSprintCom({
         {/* Tên sprint */}
         <div className='flex flex-col gap-2'>
           <label className='block text-sm font-medium text-foreground mb-1'>
-            Tên sprint <span className='text-red-500'>*</span>
+            Tên giai đoạn <span className='text-red-500'>*</span>
           </label>
           <input
             className='w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='Điền tên sprint của bạn'
+            placeholder='Điền tên giai đoạn của bạn'
             value={formData?.name ?? ''}
             onChange={(e) => handleInputChange('name', e.target.value)}
           />
@@ -133,7 +133,7 @@ export default function EditSprintCom({
             value={duration}
             options={durationOptions}
             onChange={(e) => setDuration(e.value)}
-            placeholder='Chọn thời lượng sprint'
+            placeholder='Chọn thời lượng giai đoạn'
             className='w-full'
           />
         </div>
@@ -177,7 +177,7 @@ export default function EditSprintCom({
           <textarea
             className='w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none'
             rows={4}
-            placeholder='Mô tả về định hướng của sprint'
+            placeholder='Mô tả về định hướng của giai đoạn'
             value={formData?.goal ?? ''}
             onChange={(e) => handleInputChange('goal', e.target.value)}
           />

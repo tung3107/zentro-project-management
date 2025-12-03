@@ -16,6 +16,7 @@ const Project = require("./Project");
 const ProjectStatus = require("./ProjectStatus");
 const Role = require("./Role");
 const RolePermission = require("./RolePermission");
+const RoleTemplate = require("./RoleTemplate");
 const Sprint = require("./Sprint");
 const Task = require("./Task");
 const TaskLabel = require("./TaskLabel");
@@ -28,6 +29,7 @@ const TestCaseVersion = require("./TestCaseVersion");
 const TestCaseAttachment = require("./TestCaseAttachment");
 const TestCaseTaskRelation = require("./TestCaseTaskRelation");
 const Report = require("./Report");
+const UserDevice = require("./UserDevice");
 
 const connectDB = async () => {
   try {
@@ -43,6 +45,10 @@ const connectDB = async () => {
 User.belongsTo(Role, { foreignKey: "role_id" });
 
 Role.hasMany(User, { foreignKey: "role_id" });
+
+//// QUAN HỆ CỦA USER VÀ USER DEVICE
+User.hasMany(UserDevice, { foreignKey: "user_id", as: "devices" });
+UserDevice.belongsTo(User, { foreignKey: "user_id", as: "user" });
 
 //// QUAN HỆ NHIỀU NHIỀU CỦA ROLE VÀ PERMISSION
 Role.belongsToMany(Permission, {
@@ -629,5 +635,23 @@ Permission.hasMany(ProjectRolePermission, { foreignKey: "permission_id" });
 // Cũng liên kết role để reference nếu cần
 ProjectRolePermission.belongsTo(Role, { foreignKey: "role_id", as: "role" });
 Role.hasMany(ProjectRolePermission, { foreignKey: "role_id" });
+
+// RoleTemplate associations
+RoleTemplate.belongsTo(Role, {
+  foreignKey: "role_id",
+  targetKey: "role_id",
+  as: "role",
+});
+Role.hasMany(RoleTemplate, { foreignKey: "role_id", as: "roleTemplates" });
+
+RoleTemplate.belongsTo(Permission, {
+  foreignKey: "permission_id",
+  targetKey: "permission_id",
+  as: "permission",
+});
+Permission.hasMany(RoleTemplate, {
+  foreignKey: "permission_id",
+  as: "roleTemplates",
+});
 
 module.exports = { sequelize, connectDB };

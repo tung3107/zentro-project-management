@@ -52,14 +52,27 @@ export default function InlineEditableAssignee({
         </div>
       ) : assignee ? (
         <div className='flex items-center gap-2' title={assignee.email || ''}>
-          <Avatar
-            name={`${assignee.first_name || ''} ${assignee.last_name || ''}`}
-            size={24}
-            avatarUrl={assignee.avatar}
-          />
-          <span className='text-sm text-gray-700 truncate'>
-            {assignee.first_name} {assignee.last_name}
-          </span>
+          <div className='relative'>
+            <Avatar
+              name={`${assignee.first_name || ''} ${assignee.last_name || ''}`}
+              size={24}
+              avatarUrl={assignee.avatar}
+            />
+            {assignee.memberships?.[0]?.is_delete && (
+              <span
+                className='absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-red-500 ring-1 ring-white'
+                title='Đã rời dự án'
+              />
+            )}
+          </div>
+          <div className='flex flex-col'>
+            <span className='text-sm text-gray-700 truncate'>
+              {assignee.first_name} {assignee.last_name}
+            </span>
+            {assignee.memberships?.[0]?.is_delete && (
+              <span className='text-[10px] text-red-500 font-normal leading-none'>Đã rời dự án</span>
+            )}
+          </div>
         </div>
       ) : (
         <span className='text-sm text-gray-400'>—</span>

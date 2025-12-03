@@ -111,12 +111,12 @@ export default function MemberListEdit({
     const leaderCount = members.filter((m) => m.role.role_id === 7).length
 
     if (leaderCount > 1) {
-      toast.error('Trong một dự án chỉ được có duy nhất 1 Leader')
+      toast.error('Trong một dự án chỉ được có duy nhất 1 Trưởng nhóm')
       return
     }
 
     if (leaderCount < 1) {
-      toast.error('Trong một dự án phải có 1 Leader')
+      toast.error('Trong một dự án phải có 1 Trưởng nhóm')
       return
     }
 

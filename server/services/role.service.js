@@ -121,7 +121,6 @@ class RoleService {
         }));
 
         return sequelize.transaction(async (t) => {
-          // lấy old member
           const oldRoles = await RolePermission.findAll({
             where: { role_id: role_id },
             transaction: t,

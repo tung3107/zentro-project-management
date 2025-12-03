@@ -20,6 +20,7 @@ import type { AxiosError } from 'axios'
 import type { ApiErrorResponse } from '../../../auth/hooks/useAuth'
 import AIDescriptionButton from './AIDescriptionButton'
 import AITaskSummaryModal from './AITaskSummaryModal'
+import ConfirmModal from '../../../../components/ConfirmModal'
 
 const InputNumber = ({ value, onValueChange, placeholder, className }: any) => (
   <input
@@ -51,6 +52,7 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
 
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(true)
   const [showAISummary, setShowAISummary] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   const { projectId } = useParams()
@@ -121,8 +123,11 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
     autoSave(updated)
   }
 
-  const handleDelete = async () => {
-    if (!confirm('Bạn có chắc chắn muốn xóa công việc này?')) return
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true)
+  }
+
+  const handleDeleteConfirm = async () => {
     setIsLoading(true)
     try {
       await new Promise((resolve) => setTimeout(resolve, 500))
@@ -225,7 +230,7 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
               )}
               {permissions.canDelete && (
                 <button
-                  onClick={handleDelete}
+                  onClick={handleDeleteClick}
                   className='p-2 hover:bg-red-50 rounded-md transition-colors'
                   title='Xóa'
                   disabled={isLoading}
@@ -395,6 +400,7 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
                     value={formData.status_id ?? null}
                     className='w-full h-[40px]!'
                     showClear={false}
+                    appendTo='self'
                   />
                 </div>
 
@@ -412,6 +418,7 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
                     className='h-[40px]! w-full!'
                     avatar={true}
                     showClear={false}
+                    appendTo='self'
                   />
                 </div>
 
@@ -425,6 +432,7 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
                     showClear={false}
                     className='ml-[0px]! h-[40px]! w-full!'
                     onChange={(val) => handleChange('priority', val)}
+                    appendTo='self'
                   />
                 </div>
 
@@ -456,13 +464,14 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
                     onChange={(e) => handleChange('type', e?.target?.value)}
                     placeholder='Chọn loại công việc'
                     className='h-[40px]! w-full! flex flex-row items-center'
+                    appendTo='self'
                   />
                 </div>
 
                 {/* Sprint */}
                 <div>
                   <label className='block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2'>
-                    Sprint
+                    Giai đoạn
                   </label>
                   <div className='border border-gray-400 rounded-md'>
                     <Dropdown
@@ -474,6 +483,8 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
                       className='h-[40px]! w-full!'
                       valueKey='sprint_id'
                       labelKey='name'
+                      appendTo='self'
+                      disabled={!permissions.canDragTaskSprint}
                     />
                   </div>
                 </div>
@@ -524,6 +535,7 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
                     avatar={true}
                     disabled={true}
                     showClear={false}
+                    appendTo='self'
                   />
                 </div>
 
@@ -560,7 +572,7 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
                   <div className='pt-2'>
                     <div className='flex justify-between text-xs text-gray-600 mb-1'>
                       <span>Tiến độ</span>
-                      <span>{Math.round(((formData.spent_time || 0) / formData.estimate) * 100)}%</span>
+                      <span>{Math.min(Math.round(((formData.spent_time || 0) / formData.estimate) * 100), 100)}%</span>
                     </div>
                     <div className='w-full bg-gray-200 rounded-full h-2'>
                       <div
@@ -587,6 +599,16 @@ export default function TaskDetailModal({ isOpen, onClose, onUpdate }: TaskDetai
           taskId={taskId}
         />
       )}
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteConfirm}
+        title='Xóa công việc'
+        message='Bạn có chắc chắn muốn xóa công việc này? Hành động này không thể hoàn tác.'
+        confirmText='Xóa'
+        confirmButtonColor='bg-red-600 hover:bg-red-700'
+      />
     </div>
   )
 }

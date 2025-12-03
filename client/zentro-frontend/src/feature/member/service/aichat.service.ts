@@ -16,6 +16,8 @@ export interface ProjectContextStats {
   completedTasks: number
   inProgressTasks: number
   todoTasks: number
+  blockedTasks: number
+  cancelledTasks: number
   highPriorityTasks: number
   overdueTasks: number
   activeSprints: number

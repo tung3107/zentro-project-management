@@ -8,7 +8,7 @@ import type { AxiosError } from 'axios'
 import api from '../../../../util/axiosClient'
 import type { Task } from '../../../../types/task'
 import type { Sprint } from '../../../../types/sprint'
-import { getBacklog, searchBacklog, updateTaskAPI } from '../../service/task.service'
+import { searchBacklog, updateTaskAPI } from '../../service/task.service'
 import { deleteSprintAPI, startsprintAPI, completeSprintAPI, getAllSprintsAPI } from '../../service/sprint.service'
 import type { ApiErrorResponse } from '../../../auth/hooks/useAuth'
 import AddTaskCom from '../task/AddTaskCom'
@@ -25,7 +25,13 @@ interface BacklogType {
   sprints: Sprint[]
 }
 
-export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
+export default function BacklogPage({
+  searchQuery,
+  filters
+}: {
+  searchQuery: string
+  filters?: { assignee_id?: string; priority?: number; type?: string }
+}) {
   const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({ backlog: true })
   const menuRef = useRef<any>(null)
   const [menuModel, setMenuModel] = useState<any[]>([])
@@ -62,28 +68,38 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
   })
   const [loading, setLoading] = useState(true)
 
-  const handleSearch = async (projectId: string | undefined, query: string) => {
-    if (!projectId) return
-    const data = await searchBacklog(projectId, query)
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery)
 
-    setData(data.data)
-  }
-
+  // Debounce search query
   useEffect(() => {
-    const delay = setTimeout(() => {
-      if (projectId) {
-        handleSearch(projectId, searchQuery)
-      }
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery)
     }, 400)
-    return () => clearTimeout(delay)
-  }, [projectId, searchQuery])
+    return () => clearTimeout(handler)
+  }, [searchQuery])
 
+  // Refresh data when search or filters change (without resetting expanded state)
+  useEffect(() => {
+    const refreshData = async () => {
+      if (!projectId) return
+      try {
+        const res = await searchBacklog(projectId, debouncedQuery, filters)
+        setData(res.data)
+      } catch (err) {
+        console.error('Search error:', err)
+      }
+    }
+    refreshData()
+  }, [projectId, debouncedQuery, filters])
+
+  // Initial load and full reload (resets expanded state)
   useEffect(() => {
     async function fetchData() {
       if (!projectId) return
       setLoading(true)
       try {
-        const res = await getBacklog(projectId)
+        // Use current searchQuery (prop) to be immediate on reload
+        const res = await searchBacklog(projectId, searchQuery, filters)
 
         setData(res.data)
         const expandAll: { [key: string]: boolean } = { backlog: true }
@@ -218,7 +234,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
     openDeleteModal(
       <>
         <h2 className='title'>Bạn chắc chắn chưa?</h2>
-        <p className='subtitle'>{`Bạn muốn xóa sprint ${sprint.name}`}</p>
+        <p className='subtitle'>{`Bạn muốn xóa giai đoạn ${sprint.name}`}</p>
       </>
     )
   }
@@ -333,24 +349,24 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
 
     try {
       if (!permissions.canCompleteSprint) {
-        toast.error('Bạn không có quyền hoàn thành sprint!')
+        toast.error('Bạn không có quyền hoàn thành giai đoạn!')
         return
       }
       await completeSprintAPI(sprintToComplete.sprint_id, incompleteTasks)
-      toast.success('Đã hoàn thành sprint thành công!')
+      toast.success('Đã hoàn thành giai đoạn thành công!')
 
       setSprintToComplete(null)
       setReloadKey((prev) => prev + 1)
     } catch (err) {
       const error = err as AxiosError<ApiErrorResponse>
-      toast.error(error.response?.data.error.message ?? 'Lỗi khi hoàn thành sprint!')
+      toast.error(error.response?.data.error.message ?? 'Lỗi khi hoàn thành giai đoạn!')
     }
   }
 
   const startSprint = async (sprint: Sprint) => {
     try {
       await startsprintAPI(sprint)
-      toast.success('Bắt đầu 1 sprint')
+      toast.success('Bắt đầu 1 giai đoạn')
 
       setReloadKey((prev) => prev + 1)
     } catch (err) {
@@ -362,7 +378,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
   const handleTaskUpdate = async () => {
     // Reload board after task update/delete
     try {
-      const res = await getBacklog(projectId)
+      const res = await searchBacklog(projectId, searchQuery, filters)
       setData(res.data)
     } catch (err) {
       console.error(err)
@@ -519,7 +535,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                         style={{ backgroundColor: '#0052CC' }}
                         onClick={() => completeSprint(sprint)}
                       >
-                        Hoàn thành sprint
+                        Hoàn thành giai đoạn
                       </button>
                     )}
                   {sprint?.tasks && sprint.tasks.length > 0 && sprint.status === 'planned' && (
@@ -528,7 +544,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                       style={{ backgroundColor: '#FFAB00' }}
                       onClick={() => startSprint(sprint)}
                     >
-                      Bắt đầu sprint
+                      Bắt đầu giai đoạn
                     </button>
                   )}
                   <Menu model={menuModel} popup ref={menuRef} />
@@ -540,13 +556,13 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                         const menuItems = []
                         if (permissions.canEdit)
                           menuItems.push({
-                            label: 'Sửa Sprint',
+                            label: 'Sửa giai đoạn',
                             icon: 'pi pi-pencil',
                             command: () => handleEdit(sprint)
                           })
                         if (permissions.canDeleteSprint)
                           menuItems.push({
-                            label: 'Xóa Sprint',
+                            label: 'Xóa giai đoạn',
                             icon: 'pi pi-trash',
                             command: () => handleDelete(sprint)
                           })
@@ -572,7 +588,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                       {sprint.tasks?.length === 0 ? (
                         <div className='text-center text-gray-500 py-12 font-medium'>
                           <div className='text-4xl mb-3'>🎯</div>
-                          <div>Chưa có task nào trong sprint này</div>
+                          <div>Chưa có task nào trong giai đoạn này</div>
                           <div className='text-sm text-gray-400 mt-1'>Kéo task từ Backlog vào đây để bắt đầu</div>
                         </div>
                       ) : (
@@ -620,7 +636,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                 <ChevronRight size={18} className='text-gray-600 group-hover:text-gray-900' />
               )}
               <div className='flex items-center gap-3'>
-                <span className='text-lg font-semibold text-gray-900'>Backlog</span>
+                <span className='text-lg font-semibold text-gray-900'>Kho công việc</span>
                 <span className='px-2 py-0.5 text-xs font-medium rounded-md bg-gray-100 text-gray-700'>
                   {data.backlog?.tasks?.length || 0} tasks
                 </span>
@@ -633,7 +649,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                   className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer'
                   onClick={handleAddSprint}
                 >
-                  Tạo sprint mới
+                  Tạo giai đoạn mới
                 </button>
               )}
             </div>
@@ -651,7 +667,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
                   {data.backlog.tasks.length === 0 ? (
                     <div className='text-center text-gray-500 py-12 font-medium'>
                       <div className='text-4xl mb-3'>📋</div>
-                      <div>Không có task nào trong backlog</div>
+                      <div>Không có task nào trong kho công việc</div>
                       <div className='text-sm text-gray-400 mt-1'>Tạo task mới để bắt đầu làm việc</div>
                     </div>
                   ) : (
@@ -716,7 +732,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
         setModalOpen={setAddSprintModalOpen}
         setModalContent={setAddSprintModalContent}
         onSubmit={() => handleAddSprint()}
-        title='Tạo sprint mới'
+        title='Tạo giai đoạn mới'
         width='40%'
         height='90%'
       >
@@ -730,7 +746,7 @@ export default function BacklogPage({ searchQuery }: { searchQuery: string }) {
         setModalOpen={setEditSprintModalOpen}
         setModalContent={setEditSprintModalContent}
         onSubmit={() => {}}
-        title='Edit sprint'
+        title='Sửa giai đoạn'
         width='40%'
         height='90%'
       >

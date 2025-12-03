@@ -8,6 +8,7 @@ interface WorkLoadData {
   name: string
   percent: number
   avatar: string | null
+  is_deleted?: boolean
 }
 
 interface WorkLoadDataProps {
@@ -103,8 +104,19 @@ export default function WorkLoadCard({ data }: WorkLoadDataProps) {
         {data.map((item, idx) => (
           <ProgressBarContainer key={item.name}>
             <Label color={'#101828'}>
-              <Avatar name={item.name} avatarUrl={item.avatar} size={25} />
-              <span className='text-[16px]'>{item.name}</span>
+              <div className='relative'>
+                <Avatar name={item.name} avatarUrl={item.avatar} size={25} />
+                {item.is_deleted && (
+                  <span
+                    className='absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-red-500 ring-1 ring-white'
+                    title='Đã rời dự án'
+                  />
+                )}
+              </div>
+              <div className='flex flex-col'>
+                <span className='text-[16px] leading-none'>{item.name}</span>
+                {item.is_deleted && <span className='text-[10px] text-red-500 font-normal'>Đã rời dự án</span>}
+              </div>
             </Label>
             <ProgressTrack>
               <ProgressFillWrapper

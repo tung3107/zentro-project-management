@@ -48,7 +48,7 @@ class ChatService {
             },
           },
           {
-            // ⚠️ THÊM: Lấy tin nhắn cuối cùng
+            // Lấy tin nhắn cuối cùng
             model: Message,
             as: "messages",
             separate: true,
@@ -58,7 +58,6 @@ class ChatService {
           },
         ],
         order: [
-          // ⚠️ THÊM: Sắp xếp theo tin nhắn mới nhất
           [
             literal(
               "(SELECT MAX(timestamp) FROM messages WHERE messages.chat_id = Chat.chat_id)"
@@ -68,11 +67,10 @@ class ChatService {
         ],
       });
 
-      // Format lại data cho frontend
+      // Format
       return chats.map((chat) => {
         const lastMsg = chat.messages?.[0];
 
-        // Với chat 1-1, tìm người kia để lấy tên và avatar
         let displayName = chat.name;
         let displayAvatar = chat.chat_avatar;
         let isBlocked = false;
@@ -92,7 +90,6 @@ class ChatService {
             displayAvatar = otherUser.avatar;
 
             // Check block status
-            // Kiểm tra xem người kia có bị block không
             if (otherUser.ChatMember && otherUser.ChatMember.is_blocked) {
               isBlocked = true;
               blockedBy = otherUser.ChatMember.blocked_by;
@@ -128,8 +125,8 @@ class ChatService {
           chat_color: chat.chat_color,
           lastMessage: lastMsg ? lastMsg.content : null,
           lastMessageTime: lastMsg ? lastMsg.timestamp : null,
-          unreadCount: 0, // TODO: Implement unread logic
-          memberDetails: chat.members, // Giữ lại info đầy đủ nếu cần
+          unreadCount: 0,
+          memberDetails: chat.members,
           isBlocked,
           blockedBy,
           iBlockedThem,
@@ -434,7 +431,7 @@ class ChatService {
 
       return {
         success: true,
-        message: "User đã được unblock",
+        message: "Người dùng đã bi unblock",
       };
     } catch (err) {
       console.error("unblockUser error:", err);
@@ -624,11 +621,11 @@ class ChatService {
 
       // Format cho frontend
       return files.map((file) => ({
-        media_file_id: file.media_file_id, // Fixed: correct field name
+        media_file_id: file.media_file_id,
         chat_id: file.chat_id,
-        url: file.url, // Fixed: correct field name
+        url: file.url,
         name: file.file_name,
-        type: file.type, // Fixed: correct field name
+        type: file.type,
         timestamp: file.uploaded_at,
       }));
     } catch (err) {
@@ -640,19 +637,17 @@ class ChatService {
     }
   }
 
-  /**
-   * ⚠️ THÊM MỚI: Tạo chat mới
-   * @param {object} data { name, isGroup, members, createdBy }
-   */
   async createChat(data) {
     const transaction = await sequelize.transaction();
 
     try {
       const { name, isGroup, members, createdBy, chatColor } = data;
 
-      // Validate
-      if (isGroup && (!members || members.length < 2)) {
-        throw new ApiError("Group chat cần ít nhất 2 thành viên", 400);
+      if (isGroup && (!members || members.length < 1)) {
+        throw new ApiError(
+          "Group chat cần ít nhất 1 thành viên (ngoài người tạo)",
+          400
+        );
       }
 
       if (!isGroup && members.length !== 1) {
@@ -684,7 +679,6 @@ class ChatService {
           });
 
           if (otherMember) {
-            // Chat với user này đã tồn tại, trả về chat đó
             const existingChat = await this.getChatById(
               chatMember.chat_id,
               createdBy
@@ -696,7 +690,7 @@ class ChatService {
 
       // Tạo chat
       const chatData = {
-        name: isGroup ? name : `Chat 1-1`, // Chat 1-1 dùng tên generic, sẽ format ở FE
+        name: isGroup ? name : `Chat 1-1`,
         is_group: isGroup,
         chat_color: chatColor || "#cb0404",
         created_by: createdBy,
@@ -753,12 +747,6 @@ class ChatService {
     }
   }
 
-  /**
-   * ⚠️ THÊM MỚI: Thêm members vào group
-   * @param {number} chatId
-   * @param {array} userIds - Danh sách user_id cần thêm
-   * @param {string} addedBy - User thực hiện thêm
-   */
   async addMembersToGroup(chatId, userIds, addedBy) {
     const transaction = await sequelize.transaction();
 
@@ -846,7 +834,6 @@ class ChatService {
   }
 
   /**
-   * ⚠️ THÊM MỚI: Xóa member khỏi group
    * @param {number} chatId
    * @param {string} userId - User bị xóa
    * @param {string} removedBy - User thực hiện xóa

@@ -277,6 +277,20 @@ class UserService {
       throw new ApiError(`Error: ${err.message}`, 400);
     }
   }
+
+  async updateTimezone(user_id, timezone) {
+    try {
+      const user = await User.findByPk(user_id);
+      if (!user) throw new ApiError("User not found", 404);
+
+      user.timezone = timezone;
+      await user.save({ validate: false });
+
+      return "Cập nhật múi giờ thành công";
+    } catch (err) {
+      throw new ApiError(`Error: ${err.message}`, 400);
+    }
+  }
 }
 
 module.exports = UserService;

@@ -19,11 +19,5 @@ export const menuItems: MenuItem[] = [
     label: 'Dự Án',
     icon: SquareChartGantt,
     path: '/admin/projects'
-  },
-  {
-    id: 'settings',
-    label: 'Cài đặt',
-    icon: Settings,
-    path: '/admin/settings'
   }
 ]

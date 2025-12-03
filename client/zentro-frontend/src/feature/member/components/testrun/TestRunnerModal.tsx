@@ -27,6 +27,7 @@ import Avatar from '../../../../components/Avatar'
 import { getMembersByProject, type MemberData } from '../../service/member.service'
 import { Skeleton } from 'primereact/skeleton'
 import TestResultModal from './TestResultModal'
+import ConfirmModal from '../../../../components/ConfirmModal'
 
 interface TestRunnerModalProps {
   isOpen: boolean
@@ -56,6 +57,7 @@ export default function TestRunnerModal({
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false)
   const [showResultModal, setShowResultModal] = useState(false)
   const [isReadOnly, setIsReadOnly] = useState(false)
+  const [showRerunConfirm, setShowRerunConfirm] = useState(false)
 
   // Overall status state
   const [overallStatus, setOverallStatus] = useState(testCase.status)
@@ -183,11 +185,11 @@ export default function TestRunnerModal({
     }
   }
 
-  const handleRerun = async () => {
-    if (!confirm('Bạn có chắc muốn chạy lại test case này? Kết quả hiện tại sẽ được lưu vào lịch sử.')) {
-      return
-    }
+  const handleRerunClick = () => {
+    setShowRerunConfirm(true)
+  }
 
+  const handleConfirmRerun = async () => {
     try {
       await rerunTestCaseAPI(runId, testCase.testcase_id)
       onUpdate()
@@ -195,7 +197,8 @@ export default function TestRunnerModal({
       setIsReadOnly(false)
     } catch (error) {
       console.error('Failed to re-run test case:', error)
-      alert('Chạy lại test case thất bại')
+    } finally {
+      setShowRerunConfirm(false)
     }
   }
 
@@ -216,7 +219,7 @@ export default function TestRunnerModal({
       if (items[i].type.indexOf('image') !== -1) {
         const blob = items[i].getAsFile()
         console.log(`Image pasted for step ${stepNumber}`, blob)
-        alert('Image paste detected! (Upload implementation required)')
+        alert('Đã phát hiện dán ảnh! (Cần triển khai tính năng tải lên)')
       }
     }
   }
@@ -255,7 +258,7 @@ export default function TestRunnerModal({
                   name={`${testCase.executor?.first_name} ${testCase.executor?.last_name}`}
                   size={20}
                 />
-                <span className='text-gray-600'>{testCase.executor?.last_name || 'Unassigned'}</span>
+                <span className='text-gray-600'>{testCase.executor?.last_name || 'Chưa gán'}</span>
               </div>
             </div>
           </div>
@@ -322,7 +325,7 @@ export default function TestRunnerModal({
                 Chỉnh sửa
               </button>
               <button
-                onClick={handleRerun}
+                onClick={handleRerunClick}
                 className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center gap-2 text-sm'
               >
                 <RotateCcw size={14} />
@@ -415,7 +418,7 @@ export default function TestRunnerModal({
                         onClick={() => handleAssigneeChange(null)}
                         className='w-full px-3 py-2 text-left hover:bg-gray-100 rounded-md transition-colors text-sm text-gray-500 italic'
                       >
-                        Unassign
+                        Bỏ gán
                       </button>
                       {members.map((member) => (
                         <button
@@ -724,6 +727,16 @@ export default function TestRunnerModal({
         currentStatus={overallStatus}
         currentNote={testCase.note}
         currentImages={testCase.image_urls}
+      />
+
+      <ConfirmModal
+        isOpen={showRerunConfirm}
+        onClose={() => setShowRerunConfirm(false)}
+        onConfirm={handleConfirmRerun}
+        title='Chạy lại test case'
+        message='Bạn có chắc muốn chạy lại test case này? Kết quả hiện tại sẽ được lưu vào lịch sử.'
+        confirmText='Chạy lại'
+        confirmButtonColor='bg-blue-600 hover:bg-blue-700'
       />
     </>
   )

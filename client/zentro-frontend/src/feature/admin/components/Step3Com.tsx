@@ -44,7 +44,7 @@ export default function Step3Com({
         isAddedNew={true}
       />
       <p style={{ fontSize: '12px', fontWeight: '400', lineHeight: '150%', width: '40%' }} className='text-gray-600'>
-        Sau khi tạo dựa án thành công, một nhóm chat của dự án sẽ được tạo với tên của dự án
+        Sau khi tạo 1 dự án có trên 2 người, một nhóm chat của dự án sẽ được tạo với tên của dự án
       </p>
       {errors.members && <p className='text-sm text-red-500 mt-3 ml-[12px]'>{errors.members}</p>}
     </div>

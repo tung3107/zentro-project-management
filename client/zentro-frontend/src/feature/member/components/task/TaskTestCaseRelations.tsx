@@ -100,7 +100,7 @@ export default function TaskTestCaseRelations({ taskId }: TaskTestCaseRelationsP
                       <p className='text-sm text-gray-600 mt-1 line-clamp-2'>{suite.description}</p>
                     )}
                     {suite.testCases && suite.testCases.length > 0 && (
-                      <p className='text-xs text-gray-500 mt-2'>{suite.testCases.length} test cases</p>
+                      <p className='text-xs text-gray-500 mt-2'>{suite.testCases.length} test case</p>
                     )}
                   </div>
                   <ExternalLink
@@ -120,7 +120,7 @@ export default function TaskTestCaseRelations({ taskId }: TaskTestCaseRelationsP
           <div className='px-4 py-3 border-b border-gray-200 bg-gray-50'>
             <div className='flex items-center gap-2'>
               <FileText size={18} className='text-gray-700' />
-              <h4 className='font-semibold text-gray-900'>Test Cases liên quan</h4>
+              <h4 className='font-semibold text-gray-900'>Test Case liên quan</h4>
               <span className='text-sm text-gray-600'>({testCases.length})</span>
             </div>
           </div>

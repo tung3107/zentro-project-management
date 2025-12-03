@@ -73,6 +73,7 @@ const DoughnutLabel = styled.div`
   font-size: 18px;
   font-weight: 500;
   margin-top: 8px;
+  text-align: center;
   font-family: 'Space Grotesk', sans-serif;
 `
 
@@ -140,7 +141,7 @@ export default function TaskProgressCard({ TASK_DATA }: { TASK_DATA: TaskDataTyp
         <Doughnut data={chartData} options={chartOptions} width={230} height={230} />
         <DoughnutCenter>
           <DoughnutTotal>{TOTAL}</DoughnutTotal>
-          <DoughnutLabel>Tổng số task</DoughnutLabel>
+          <DoughnutLabel>Tổng số công việc</DoughnutLabel>
         </DoughnutCenter>
       </DoughnutWrap>
 

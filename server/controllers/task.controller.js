@@ -143,12 +143,18 @@ exports.searchTaskBackLog = catchAsync(async (req, res, next) => {
   const { project_id } = req.params;
   const user_id = req.user.user_id;
 
-  const { search } = req.query;
+  const { search, assignee_id, priority, type } = req.query;
+
+  const filters = {};
+  if (assignee_id) filters.assignee_id = assignee_id;
+  if (priority !== undefined) filters.priority = parseInt(priority);
+  if (type) filters.type = type;
 
   const data = await new TaskService().searchTaskBackLog(
     user_id,
     project_id,
-    search
+    search,
+    filters
   );
 
   res.status(200).json({

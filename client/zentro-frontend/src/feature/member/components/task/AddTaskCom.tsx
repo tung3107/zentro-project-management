@@ -361,7 +361,7 @@ export default function AddTaskCom({
             <h3 className='text-sm font-semibold text-gray-900 uppercase tracking-wide'>Tùy chọn</h3>
 
             <div className='flex flex-col gap-2'>
-              <label className='block text-sm font-medium text-gray-700'>Sprint</label>
+              <label className='block text-sm font-medium text-gray-700'>Giai đoạn</label>
               <Dropdown
                 placeholder='sprint'
                 name='sprint_id'

@@ -20,8 +20,22 @@ export const updateTaskAPI = async (task: Task) => {
   return response.data
 }
 
-export const searchBacklog = async (project_id: string, query: string) => {
-  const response = await api.get(`/tasks/backlog/search/${project_id}?search=${query}`)
+export const searchBacklog = async (
+  project_id: string,
+  query: string,
+  filters?: {
+    assignee_id?: string
+    priority?: number
+    type?: string
+  }
+) => {
+  const params = new URLSearchParams()
+  if (query) params.append('search', query)
+  if (filters?.assignee_id) params.append('assignee_id', filters.assignee_id)
+  if (filters?.priority !== undefined) params.append('priority', filters.priority.toString())
+  if (filters?.type) params.append('type', filters.type)
+
+  const response = await api.get(`/tasks/backlog/search/${project_id}?${params.toString()}`)
   return response.data
 }
 

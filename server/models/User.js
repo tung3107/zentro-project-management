@@ -111,6 +111,10 @@ User.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    timezone: {
+      type: DataTypes.STRING(50),
+      defaultValue: "Asia/Ho_Chi_Minh",
+    },
   },
   {
     sequelize, // KHÔNG PHẢI sequelize.define() nữa!
